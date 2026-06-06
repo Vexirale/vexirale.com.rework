@@ -115,6 +115,11 @@ export const siteConfig = {
     "im probably doomscrolling on tiktok rn",
     "yayayayayay",
     "how'd you know my music taste is fried?",
+    "born in 2008 btw",
+    "ouxi gt2000 go brrr",
+    "i want a cat :(",
+    "omg so tufff i got my own domain",
+    "okay idk what else to add, instead of stalking me.. talk to me!"
   ],
 
   projects: [
