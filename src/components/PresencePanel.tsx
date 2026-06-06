@@ -8,10 +8,12 @@ import { GlassPanel } from "./GlassPanel";
 import { Avatar } from "./Avatar";
 import { StatusDot } from "./StatusDot";
 import { StatusBubble } from "./StatusBubble";
+import { TimeIndicator } from "./TimeIndicator";
 import { BioRotator } from "./BioRotator";
 import { SocialLinks } from "./SocialLinks";
 import { ActivityCard } from "./ActivityCard";
 import { Skeleton } from "./Skeleton";
+import { useVisitorCount } from "../hooks/useVisitorCount";
 
 interface PresencePanelProps {
   data: LanyardData | null;
@@ -27,6 +29,7 @@ export function PresencePanel({
   accent,
 }: PresencePanelProps) {
   const customStatus = getCustomStatus(data);
+  const visitors = useVisitorCount();
 
   return (
     <GlassPanel accent={accent} className="p-6 sm:p-8">
@@ -53,14 +56,17 @@ export function PresencePanel({
             </div>
           </div>
 
-          {/* Live Discord custom status message. */}
-          <AnimatePresence>
-            {customStatus && <StatusBubble status={customStatus} />}
-          </AnimatePresence>
+          {/* Right column: custom-status thought-bubble + local/owner time. */}
+          <div className="flex shrink-0 flex-col items-end gap-2 pt-1">
+            <AnimatePresence>
+              {customStatus && <StatusBubble status={customStatus} />}
+            </AnimatePresence>
+            <TimeIndicator />
+          </div>
         </div>
 
         {/* Bio rotation */}
-        <BioRotator lines={siteConfig.bioLines} />
+        <BioRotator lines={siteConfig.bioLines} visitors={visitors} />
 
         {/* Socials */}
         <SocialLinks socials={siteConfig.socials} />

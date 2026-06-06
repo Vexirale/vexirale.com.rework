@@ -17,6 +17,14 @@
  *
  *  • bioLines ............. The presence panel rotates randomly through these.
  *                           Add or remove lines freely — the rotation adapts.
+ *                           Put {visitors} in a line to show this week's live
+ *                           visitor count there.
+ *
+ *  • timezone ............. Your IANA timezone + short label, shown beside the
+ *                           visitor's local time under the status bubble.
+ *
+ *  • visitorCounter ....... Weekly visitor count (free Abacus API, no backend).
+ *                           Displayed wherever {visitors} appears in bioLines.
  *
  *  • projects ............. Each entry becomes its own glass panel. To add a
  *                           project, push one object. Drop screenshots into
@@ -50,6 +58,10 @@ export interface Project {
    *  notepad-style modal (the background blurs) showing this text instead of
    *  navigating to `url`. Use a template string with line breaks for layout. */
   content?: string;
+  /** Optional. Set true to show an animated "Active development" status bar on
+   *  the panel, tinted with the current theme/accent color (the album-art
+   *  color while music is playing). */
+  active?: boolean;
 }
 
 export interface Social {
@@ -78,9 +90,25 @@ export const siteConfig = {
   // true ONLY if you have a strong GPU and want the real live blur back.
   enableLiveBlur: false,
 
+  // Your timezone, shown in the header time indicator next to the visitor's
+  // local time. `timezone` is an IANA name; `timezoneLabel` is the short badge.
+  timezone: "Europe/Amsterdam",
+  timezoneLabel: "AMS",
+
+  // Weekly visitor counter (uses the free Abacus API; no backend needed). Each
+  // ISO week gets its own counter, so it shows "visitors this week". Put the
+  // {visitors} token in any bio line to display it (see bioLines below).
+  visitorCounter: {
+    enabled: true,
+    // A unique namespace for your site on the counter service. Change it once;
+    // changing it later resets the count.
+    namespace: "vexirale-com",
+  },
+
   bioLines: [
     "PLACEHOLDER bio line 1",
-    "PLACEHOLDER bio line 2",
+    // The {visitors} token is replaced with this week's live visitor count.
+    "👀 {visitors} visitors stopped by this week",
     "PLACEHOLDER bio line 3",
   ],
 
@@ -92,6 +120,7 @@ export const siteConfig = {
       url: "https://fritsparts.com",
       tags: ["Web"],
       image: "/projects/fritsparts.png",
+      active: true,
     },
     {
       title: "Fatbike Parts",

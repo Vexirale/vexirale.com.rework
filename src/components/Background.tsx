@@ -3,92 +3,108 @@ import type { Rgb } from "../lib/color";
 import { rgbToRgba } from "../lib/color";
 import { useLite } from "../hooks/useLite";
 import { Particles } from "./Particles";
+import { Meteor } from "./Meteor";
 
 interface BackgroundProps {
   /** Accent color (album art or static accent) used to tint a soft bloom. */
   accent: Rgb;
 }
 
-/** A soft gradient blob. Animated only when motion is allowed; it animates
- *  position (transform) only — never blur or scale — so the blurred layer is
- *  rasterized once and just moved, which is cheap on the compositor. */
+/** A soft gradient blob that slowly drifts along a looping path, so several of
+ *  them overlapping read as a flowing, swirling aurora. Animates transform only
+ *  (translate + gentle scale), promoted to its own compositor layer. */
 function Blob({
   className,
   color,
   duration,
   delay = 0,
+  path,
   animate,
 }: {
   className: string;
   color: string;
   duration: number;
   delay?: number;
+  path: { x: number[]; y: number[]; scale: number[] };
   animate: boolean;
 }) {
   return (
     <motion.div
       aria-hidden
       className={`absolute rounded-full blur-2xl ${className}`}
-      // translateZ promotes the blob to its own compositor layer so moving it
-      // doesn't repaint the blur each frame.
       style={{ background: color, willChange: "transform", transform: "translateZ(0)" }}
-      animate={animate ? { x: [0, 36, -28, 0], y: [0, -44, 26, 0] } : undefined}
+      animate={animate ? { x: path.x, y: path.y, scale: path.scale } : undefined}
       transition={{ duration, delay, repeat: Infinity, ease: "easeInOut" }}
     />
   );
 }
 
-/** Animated aurora/mesh background: slow colored blobs + (optionally) floating
- *  particles, layered behind everything so the frosted glass has depth to blur.
+/** Animated aurora/mesh background: slow swirling colored blobs, sparse
+ *  floating particles, and the occasional meteor — layered behind everything.
  *
- *  IMPORTANT for performance: when the background animates, every frosted panel
- *  must re-blur its backdrop every frame. On phones / weak GPUs we therefore
- *  render the background completely static (see useLite), which lets the browser
- *  cache each panel's blur and keeps the page smooth. */
+ *  On phones / weak GPUs (useLite) the whole thing is rendered static so the
+ *  browser isn't doing per-frame work; capable devices get the full motion. */
 export function Background({ accent }: BackgroundProps) {
   const reduced = useReducedMotion();
   const lite = useLite();
   const animate = !reduced && !lite;
-  const tint = rgbToRgba(accent, 0.5);
+  const tint = rgbToRgba(accent, 0.55);
 
   return (
     <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-[#0a0a0a]">
-      {/* Colored aurora blobs — kept dark and tasteful. */}
+      {/* Swirling aurora blobs — kept dark and tasteful. */}
       <Blob
-        className="left-[-10%] top-[-10%] h-[50vmax] w-[50vmax] opacity-[0.18]"
-        color="radial-gradient(circle at center, #3b2a6b, transparent 70%)"
-        duration={26}
+        className="left-[-10%] top-[-12%] h-[52vmax] w-[52vmax] opacity-[0.22]"
+        color="radial-gradient(circle at center, #4b338a, transparent 70%)"
+        duration={34}
+        path={{ x: [0, 80, 40, -40, 0], y: [0, 50, 120, 60, 0], scale: [1, 1.08, 0.96, 1.05, 1] }}
         animate={animate}
       />
       <Blob
-        className="right-[-15%] top-[10%] h-[45vmax] w-[45vmax] opacity-[0.16]"
-        color="radial-gradient(circle at center, #14506e, transparent 70%)"
-        duration={32}
-        delay={2}
+        className="right-[-15%] top-[6%] h-[46vmax] w-[46vmax] opacity-[0.2]"
+        color="radial-gradient(circle at center, #155e7a, transparent 70%)"
+        duration={40}
+        delay={1.5}
+        path={{ x: [0, -70, -30, 50, 0], y: [0, 60, 130, 70, 0], scale: [1, 1.1, 0.95, 1.06, 1] }}
         animate={animate}
       />
       <Blob
-        className="bottom-[-20%] left-[20%] h-[55vmax] w-[55vmax] opacity-[0.14]"
-        color="radial-gradient(circle at center, #5a1f55, transparent 70%)"
+        className="bottom-[-22%] left-[18%] h-[56vmax] w-[56vmax] opacity-[0.18]"
+        color="radial-gradient(circle at center, #6e2068, transparent 70%)"
+        duration={46}
+        delay={3}
+        path={{ x: [0, 60, -50, -20, 0], y: [0, -60, -30, -80, 0], scale: [1, 1.07, 1.12, 0.97, 1] }}
+        animate={animate}
+      />
+      <Blob
+        className="right-[10%] bottom-[-10%] h-[40vmax] w-[40vmax] opacity-[0.16]"
+        color="radial-gradient(circle at center, #2a3f8f, transparent 70%)"
         duration={38}
-        delay={4}
+        delay={2.2}
+        path={{ x: [0, -50, 40, 30, 0], y: [0, -40, -90, -30, 0], scale: [1, 1.1, 0.94, 1.05, 1] }}
         animate={animate}
       />
 
-      {/* Accent bloom — softly tinted by the live album-art / accent color.
-          Static (no animation) to avoid forcing panel re-blurs. */}
-      <div
+      {/* Accent bloom — softly tinted by the live album-art / accent color. */}
+      <motion.div
         aria-hidden
-        className="absolute left-1/2 top-1/3 h-[45vmax] w-[45vmax] -translate-x-1/2 rounded-full blur-3xl"
+        className="absolute left-1/2 top-1/3 h-[46vmax] w-[46vmax] -translate-x-1/2 rounded-full blur-2xl"
         style={{
           background: `radial-gradient(circle at center, ${tint}, transparent 70%)`,
-          opacity: 0.12,
+          opacity: 0.14,
           transition: "background 1.2s ease",
         }}
+        animate={animate ? { x: [0, 40, -30, 0], y: [0, -30, 40, 0] } : undefined}
+        transition={{ duration: 44, repeat: Infinity, ease: "easeInOut" }}
       />
 
-      {/* Sparse upward-drifting particles for ambient depth (full mode only). */}
-      {animate && <Particles />}
+      {/* Sparse upward-drifting particles + the occasional meteor (full mode). */}
+      {animate && (
+        <>
+          <Particles />
+          <Meteor />
+        </>
+      )}
 
       {/* A faint vignette to settle the edges. */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_55%,rgba(0,0,0,0.55))]" />
