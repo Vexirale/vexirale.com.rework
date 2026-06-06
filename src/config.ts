@@ -209,7 +209,7 @@ uhhh ill do this later
     {
       label: "Discord",
       url: "https://discord.com/users/852601534759567410",
-      icon: "MessageCircle",
+      icon: "si:discord",
     },
     {
       label: "Email",
@@ -221,6 +221,21 @@ uhhh ill do this later
       label: "Roblox",
       url: "https://www.roblox.com/users/487582825/",
       icon: "si:roblox",
+    },
+    {
+      label: "TikTok",
+      url: "https://www.tiktok.com/@vexirale",
+      icon: "si:tiktok",
+    },
+    {
+      label: "Steam",
+      url: "https://steamcommunity.com/id/vexirale",
+      icon: "si:steam",
+    },
+    {
+      label: "Spotify",
+      url: "https://open.spotify.com/user/31taplaaukndq5ekom33j4hhc6dy",
+      icon: "si:spotify",
     },
     // add or remove here...
   ] as Social[],
