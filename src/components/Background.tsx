@@ -64,14 +64,14 @@ export function Background({ accent, playing }: BackgroundProps) {
         <Blob
           className="left-[-8%] top-[-8%] h-[44vmax] w-[44vmax] opacity-70"
           color="#6d28d9"
-          duration={9}
+          duration={4}
           path={{ x: [0, 220, 120, -80, 0], y: [0, 140, 260, 120, 0], scale: [1, 1.25, 0.85, 1.15, 1] }}
           animate={animate}
         />
         <Blob
           className="right-[-10%] top-[-6%] h-[42vmax] w-[42vmax] opacity-70"
           color="#2563eb"
-          duration={11}
+          duration={6}
           delay={0.5}
           path={{ x: [0, -220, -90, 120, 0], y: [0, 180, 90, 240, 0], scale: [1, 1.2, 0.9, 1.18, 1] }}
           animate={animate}
@@ -79,7 +79,7 @@ export function Background({ accent, playing }: BackgroundProps) {
         <Blob
           className="left-[30%] top-[28%] h-[40vmax] w-[40vmax] opacity-60"
           color="#db2777"
-          duration={8}
+          duration={7}
           delay={1}
           path={{ x: [0, 180, -200, 60, 0], y: [0, -160, 120, -90, 0], scale: [1, 1.22, 0.88, 1.12, 1] }}
           animate={animate}
@@ -87,7 +87,7 @@ export function Background({ accent, playing }: BackgroundProps) {
         <Blob
           className="right-[-6%] bottom-[-8%] h-[42vmax] w-[42vmax] opacity-60"
           color="#0891b2"
-          duration={10}
+          duration={5}
           delay={0.3}
           path={{ x: [0, -200, 120, 80, 0], y: [0, -180, -260, -100, 0], scale: [1, 1.2, 0.9, 1.16, 1] }}
           animate={animate}
@@ -95,7 +95,7 @@ export function Background({ accent, playing }: BackgroundProps) {
         <Blob
           className="left-[-6%] bottom-[-10%] h-[46vmax] w-[46vmax] opacity-55"
           color="#7e22ce"
-          duration={12}
+          duration={6}
           delay={1.4}
           path={{ x: [0, 220, -120, -160, 0], y: [0, -200, -90, -240, 0], scale: [1, 1.18, 1.24, 0.9, 1] }}
           animate={animate}
@@ -103,7 +103,7 @@ export function Background({ accent, playing }: BackgroundProps) {
         <Blob
           className="left-[40%] top-[-10%] h-[38vmax] w-[38vmax] opacity-55"
           color="#0ea5e9"
-          duration={9.5}
+          duration={4.5}
           delay={0.8}
           path={{ x: [0, -160, 140, -60, 0], y: [0, 220, 120, 280, 0], scale: [1, 1.2, 0.92, 1.14, 1] }}
           animate={animate}
