@@ -65,10 +65,13 @@ export function PresencePanel({
         {/* Bio rotation */}
         <BioRotator lines={siteConfig.bioLines} visitors={visitors} />
 
-        {/* Socials + local/owner clock widget */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        {/* Socials + local/owner clock widget. The clock keeps to the right
+            (so on mobile it sits under the status bubble, not on the left). */}
+        <div className="flex flex-wrap items-center gap-3">
           <SocialLinks socials={siteConfig.socials} />
-          <TimeIndicator />
+          <div className="ml-auto">
+            <TimeIndicator />
+          </div>
         </div>
 
         {/* Live activity card — collapses cleanly when idle. */}
