@@ -32,7 +32,7 @@ export function TimeIndicator() {
   const visitor = formatIn(now);
 
   return (
-    <div className="glass flex shrink-0 items-center gap-3 rounded-2xl px-4 py-3">
+    <div className="flex shrink-0 items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3">
       <Clock className="h-9 w-9 shrink-0 text-white/55" strokeWidth={1.25} />
       <div className="flex flex-col">
         <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-white/40">

@@ -79,6 +79,36 @@ function iconFor(name: string): ComponentType<LucideProps> {
   return NORMALIZED[name.replace(/[^a-z0-9]/gi, "").toLowerCase()] ?? LinkIcon;
 }
 
+/** Render any icon by config name. A "si:<slug>" name pulls a brand icon from
+ *  Simple Icons (https://simpleicons.org) via its CDN, masked to currentColor so
+ *  it matches the theme and hover. Anything else uses the bundled lucide set. */
+function SocialIcon({ name, className }: { name: string; className?: string }) {
+  if (/^si:/i.test(name)) {
+    const slug = name.slice(name.indexOf(":") + 1).trim().toLowerCase();
+    const url = `https://cdn.simpleicons.org/${slug}`;
+    return (
+      <span
+        role="img"
+        className={className}
+        style={{
+          display: "inline-block",
+          backgroundColor: "currentColor",
+          WebkitMaskImage: `url("${url}")`,
+          maskImage: `url("${url}")`,
+          WebkitMaskRepeat: "no-repeat",
+          maskRepeat: "no-repeat",
+          WebkitMaskPosition: "center",
+          maskPosition: "center",
+          WebkitMaskSize: "contain",
+          maskSize: "contain",
+        }}
+      />
+    );
+  }
+  const Icon = iconFor(name);
+  return <Icon className={className} />;
+}
+
 const buttonClass =
   "group/social inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-white/70 transition-colors hover:border-white/30 hover:bg-white/[0.08] hover:text-white";
 
@@ -87,7 +117,6 @@ function PopoverSocial({ social }: { social: Social }) {
   const reduced = useReducedMotion();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const Icon = iconFor(social.icon);
 
   // Close on outside click or Esc.
   useEffect(() => {
@@ -121,7 +150,7 @@ function PopoverSocial({ social }: { social: Social }) {
         onClick={() => setOpen((v) => !v)}
         className={buttonClass}
       >
-        <Icon className="h-[18px] w-[18px]" />
+        <SocialIcon name={social.icon} className="h-[18px] w-[18px]" />
       </button>
 
       <AnimatePresence>
@@ -161,7 +190,6 @@ export function SocialLinks({ socials }: { socials: Social[] }) {
             <PopoverSocial key={`${social.label}-${social.url}`} social={social} />
           );
         }
-        const Icon = iconFor(social.icon);
         return (
           <a
             key={`${social.label}-${social.url}`}
@@ -172,7 +200,7 @@ export function SocialLinks({ socials }: { socials: Social[] }) {
             title={social.label}
             className={buttonClass}
           >
-            <Icon className="h-[18px] w-[18px]" />
+            <SocialIcon name={social.icon} className="h-[18px] w-[18px]" />
           </a>
         );
       })}

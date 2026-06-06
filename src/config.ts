@@ -32,13 +32,15 @@
  *                           (e.g. "/projects/foo.png"). Omit `image` to get a
  *                           clean generated placeholder instead.
  *
- *  • socials .............. Each entry becomes one icon link. `icon` is the
- *                           NAME of a lucide icon (https://lucide.dev), e.g.
- *                           "Github", "Mail", "Twitter", "MessageCircle".
- *                           A curated set is bundled (see ICONS in
- *                           components/SocialLinks.tsx); to use one that isn't
- *                           listed, add it to that map (one line). Unknown
- *                           names fall back to a generic link icon.
+ *  • socials .............. Each entry becomes one icon link. `icon` is either:
+ *                            - a lucide icon name (https://lucide.dev), e.g.
+ *                              "Github", "Mail", "MessageCircle". A curated set
+ *                              is bundled (see ICONS in SocialLinks.tsx); add a
+ *                              line there to use one not listed. Unknown names
+ *                              fall back to a generic link icon. OR
+ *                            - a Simple Icons brand icon (https://simpleicons.org)
+ *                              as "si:<slug>", e.g. "si:roblox", "si:spotify",
+ *                              "si:x" — loaded from their CDN, no bundle cost.
  *
  *  The avatar, status, and live activity (Spotify / watching / playing) are
  *  fully automatic from Lanyard and need no config beyond discordUserId.
@@ -179,7 +181,7 @@ PLACEHOLDER — replace this with your own write-up.
     {
       label: "Roblox",
       url: "https://roblox.com/useds",
-      icon: "gamepad-2",
+      icon: "si:roblox",
     },
     // add or remove here...
   ] as Social[],

@@ -110,3 +110,82 @@ export function extractDominantColor(src: string): Promise<Rgb | null> {
     img.src = src;
   });
 }
+
+function colorDist(a: Rgb, b: Rgb): number {
+  return Math.abs(a.r - b.r) + Math.abs(a.g - b.g) + Math.abs(a.b - b.b);
+}
+
+/** Extract up to `count` distinct prominent colors from an image, ranked by
+ *  frequency × vibrancy. Returns null if unavailable / blocked by CORS. Used to
+ *  color the background blobs from the current album art. */
+export function extractPalette(
+  src: string,
+  count = 5,
+): Promise<Rgb[] | null> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+
+    img.onload = () => {
+      try {
+        const size = 40;
+        const canvas = document.createElement("canvas");
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
+        if (!ctx) return resolve(null);
+
+        ctx.drawImage(img, 0, 0, size, size);
+        const { data } = ctx.getImageData(0, 0, size, size);
+
+        // Quantize into 4-bit-per-channel buckets, accumulating averages.
+        const buckets = new Map<
+          number,
+          { r: number; g: number; b: number; n: number; score: number }
+        >();
+        for (let i = 0; i < data.length; i += 4) {
+          if (data[i + 3] < 125) continue;
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          const key = ((r >> 4) << 8) | ((g >> 4) << 4) | (b >> 4);
+          let bk = buckets.get(key);
+          if (!bk) {
+            bk = { r: 0, g: 0, b: 0, n: 0, score: 0 };
+            buckets.set(key, bk);
+          }
+          bk.r += r;
+          bk.g += g;
+          bk.b += b;
+          bk.n += 1;
+          bk.score += vibrancy({ r, g, b });
+        }
+        if (buckets.size === 0) return resolve(null);
+
+        const ranked = [...buckets.values()]
+          .map((b) => ({
+            color: {
+              r: Math.round(b.r / b.n),
+              g: Math.round(b.g / b.n),
+              b: Math.round(b.b / b.n),
+            },
+            weight: b.n * (0.35 + b.score / b.n),
+          }))
+          .sort((a, b) => b.weight - a.weight);
+
+        // Pick distinct colors (keep them visibly different).
+        const picked: Rgb[] = [];
+        for (const { color } of ranked) {
+          if (picked.length >= count) break;
+          if (picked.every((p) => colorDist(p, color) > 48)) picked.push(color);
+        }
+        resolve(picked.length ? picked : null);
+      } catch {
+        resolve(null);
+      }
+    };
+
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+}
