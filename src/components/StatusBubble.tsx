@@ -60,14 +60,20 @@ export function StatusBubble({ status }: { status: CustomStatus }) {
         transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut", delay: 0.1 }}
       />
 
-      {/* Main bubble. */}
+      {/* Main bubble. Text wraps onto multiple lines (with a sane cap) instead
+          of being clipped. */}
       <motion.div
         animate={float}
-        className="glass flex items-center gap-2 rounded-2xl rounded-bl-md px-3 py-2"
+        className="glass flex items-start gap-2 rounded-2xl rounded-bl-md px-3 py-2"
       >
-        <EmojiBit emoji={status.emoji} />
+        <span className="mt-px shrink-0">
+          <EmojiBit emoji={status.emoji} />
+        </span>
         {status.text && (
-          <span className="truncate text-xs text-white/75" title={status.text}>
+          <span
+            className="min-w-0 break-words text-xs leading-snug text-white/75"
+            title={status.text}
+          >
             {status.text}
           </span>
         )}

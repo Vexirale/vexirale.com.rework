@@ -1,9 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { siteConfig } from "./config";
 import { useLanyard } from "./hooks/useLanyard";
 import { useAlbumColor } from "./hooks/useAlbumColor";
 import { useDocumentTitle } from "./hooks/useDocumentTitle";
+import { useLite } from "./hooks/useLite";
 import { selectFeaturedActivity } from "./lib/activity";
 import { Background } from "./components/Background";
 import { Landing } from "./components/Landing";
@@ -11,6 +12,13 @@ import { Portfolio } from "./components/Portfolio";
 
 export default function App() {
   const [entered, setEntered] = useState(false);
+
+  // On weak / mobile devices, drop backdrop-filter entirely (see index.css)
+  // by tagging the document — backdrop blur is what makes scrolling janky.
+  const lite = useLite();
+  useEffect(() => {
+    document.documentElement.classList.toggle("lite", lite);
+  }, [lite]);
 
   const { data, loading } = useLanyard(siteConfig.discordUserId);
 
