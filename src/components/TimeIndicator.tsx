@@ -46,13 +46,20 @@ export function TimeIndicator() {
   const visitor = formatIn(now);
 
   return (
-    <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-white/40">
-      <Clock className="h-3 w-3" />
-      <span className="text-white/60">{owner}</span>
-      <span>{siteConfig.timezoneLabel}</span>
-      <span className="text-white/25">·</span>
-      <span className="text-white/60">{visitor}</span>
-      <span title={visitorTzLabel()}>you</span>
+    <div className="glass flex shrink-0 items-center gap-2.5 rounded-xl px-3 py-2">
+      <Clock className="h-4 w-4 shrink-0 text-white/40" />
+      <div className="flex flex-col gap-1 font-mono text-[11px] leading-none">
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-white/35">{siteConfig.timezoneLabel}</span>
+          <span className="tabular-nums text-white/75">{owner}</span>
+        </div>
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-white/35" title={visitorTzLabel()}>
+            YOU
+          </span>
+          <span className="tabular-nums text-white/75">{visitor}</span>
+        </div>
+      </div>
     </div>
   );
 }
