@@ -28,33 +28,32 @@ body {
   isolation: isolate;
 }
 
-/* Reusable frosted-glass surface. */
+/* Reusable frosted-glass surface.
+ *
+ * DEFAULT = faux frost (NO backdrop-filter). A translucent gradient fill over
+ * the colorful dark background reads as glass but costs nothing per frame.
+ * Live backdrop-filter blur is what tanks FPS (every panel re-blurs its
+ * backdrop on every scroll/animation frame, and some browsers software-render
+ * it). Real blur is opt-in via <html class="live-blur"> (siteConfig.enableLiveBlur). */
 @layer components {
   .glass {
-    /* A slightly higher base fill + a smaller blur radius keeps the frosted
-       look while making backdrop-filter much cheaper to compute per frame
-       (blur cost scales with the radius). saturate() is intentionally omitted
-       as it noticeably raises backdrop-filter cost. */
-    background: rgba(255, 255, 255, 0.07);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    background:
+      linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.085),
+        rgba(255, 255, 255, 0.025)
+      );
     border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow:
       0 8px 32px rgba(0, 0, 0, 0.45),
-      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      inset 0 1px 0 rgba(255, 255, 255, 0.07);
   }
-}
 
-/* Lite mode (phones / weak GPUs): drop backdrop-filter entirely. Live blur is
-   the single biggest cause of scroll/animation jank — every panel re-blurs its
-   backdrop each frame. We swap it for a more opaque, self-contained fill that
-   still reads as a dark frosted card over the background, but costs nothing per
-   frame. Toggled via <html class="lite"> from App (see useLite). */
-@layer components {
-  html.lite .glass {
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    background: rgba(23, 23, 28, 0.72);
+  /* Opt-in real frosted blur for strong GPUs. */
+  html.live-blur .glass {
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
   }
 }
 

@@ -6,7 +6,7 @@ import { motion, useReducedMotion } from "framer-motion";
  *  If the background ever looks busy or cheap, lower COUNT and OPACITY,
  *  or set COUNT to 0 to turn particles off entirely.
  * =========================================================================== */
-const COUNT: number = 10; // how many particles (sparse on purpose)
+const COUNT: number = 8; // how many particles (sparse on purpose)
 const OPACITY = 0.35; // peak opacity of a single particle (very faint)
 const MAX_SIZE = 2.5; // px — keep tiny
 const MIN_DURATION = 16; // s — slow drift
