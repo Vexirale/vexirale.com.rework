@@ -84,7 +84,7 @@ body {
   }
 }
 .animate-hue {
-  animation: hueCycle 60s linear infinite;
+  animation: hueCycle 15s linear infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
