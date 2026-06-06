@@ -71,6 +71,13 @@ export const siteConfig = {
   discordUserId: "852601534759567410",
   accentColor: "#ffffff",
 
+  // Real frosted-glass blur (CSS backdrop-filter) is gorgeous but very
+  // expensive: panels re-blur every frame while scrolling, which tanks FPS on
+  // many machines (and falls back to slow software rendering in some browsers).
+  // The site ships with a smooth faux-frosted look by default. Set this to
+  // true ONLY if you have a strong GPU and want the real live blur back.
+  enableLiveBlur: false,
+
   bioLines: [
     "PLACEHOLDER bio line 1",
     "PLACEHOLDER bio line 2",

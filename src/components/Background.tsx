@@ -28,7 +28,7 @@ function Blob({
   return (
     <motion.div
       aria-hidden
-      className={`absolute rounded-full blur-3xl ${className}`}
+      className={`absolute rounded-full blur-2xl ${className}`}
       // translateZ promotes the blob to its own compositor layer so moving it
       // doesn't repaint the blur each frame.
       style={{ background: color, willChange: "transform", transform: "translateZ(0)" }}
