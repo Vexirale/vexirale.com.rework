@@ -219,7 +219,7 @@ uhhh ill do this later
     },
     {
       label: "Roblox",
-      url: "https://www.roblox.com/users/487582825/",
+      url: "https://www.roblox.com/users/487582825/profile",
       icon: "si:roblox",
     },
     {
