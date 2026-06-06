@@ -1,13 +1,29 @@
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useBioRotation } from "../hooks/useBioRotation";
 
+/** Replace the {visitors} token with the live weekly count (or "…" while it
+ *  loads / "—" if unavailable). */
+function fill(line: string, visitors: number | null): string {
+  if (!line.includes("{visitors}")) return line;
+  const value =
+    visitors === null ? "…" : visitors.toLocaleString();
+  return line.replace(/\{visitors\}/g, value);
+}
+
 /** Rotating bio lines with smooth swaps. The container keeps a stable min
  *  height so the panel doesn't jump as line lengths change. Under reduced
- *  motion it's a quick crossfade (no slide/blur), but rotation continues. */
-export function BioRotator({ lines }: { lines: string[] }) {
+ *  motion it's a quick crossfade (no slide/blur), but rotation continues.
+ *  A {visitors} token in any line is replaced with the weekly visitor count. */
+export function BioRotator({
+  lines,
+  visitors,
+}: {
+  lines: string[];
+  visitors: number | null;
+}) {
   const reduced = useReducedMotion();
   const index = useBioRotation(lines);
-  const line = lines[index] ?? "";
+  const line = fill(lines[index] ?? "", visitors);
 
   const variants = reduced
     ? {
