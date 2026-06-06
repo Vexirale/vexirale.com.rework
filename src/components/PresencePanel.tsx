@@ -1,11 +1,12 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { siteConfig } from "../config";
 import type { LanyardData } from "../lib/lanyard";
-import type { FeaturedActivity } from "../lib/activity";
+import { type FeaturedActivity, getCustomStatus } from "../lib/activity";
 import type { Rgb } from "../lib/color";
 import { rgbToRgba } from "../lib/color";
 import { GlassPanel } from "./GlassPanel";
 import { Avatar } from "./Avatar";
+import { StatusDot } from "./StatusDot";
 import { StatusBubble } from "./StatusBubble";
 import { BioRotator } from "./BioRotator";
 import { SocialLinks } from "./SocialLinks";
@@ -25,10 +26,13 @@ export function PresencePanel({
   featured,
   accent,
 }: PresencePanelProps) {
+  const customStatus = getCustomStatus(data);
+
   return (
     <GlassPanel accent={accent} className="p-6 sm:p-8">
       <div className="flex flex-col gap-6">
-        {/* Header: avatar + name on the left, live status bubble on the right */}
+        {/* Header: avatar + name + status dot on the left, custom-status
+            thought-bubble on the right (shown only when one is set). */}
         <div className="flex items-start gap-4 sm:gap-5">
           {loading || !data ? (
             <Skeleton className="h-20 w-20 rounded-full sm:h-24 sm:w-24" />
@@ -40,18 +44,19 @@ export function PresencePanel({
             <h1 className="text-2xl font-semibold text-white sm:text-3xl">
               {siteConfig.name}
             </h1>
-            {data?.discord_user.global_name && (
-              <p className="mt-0.5 font-mono text-xs text-white/40">
-                @{data.discord_user.username}
-              </p>
-            )}
+            <div className="mt-1.5">
+              {loading || !data ? (
+                <Skeleton className="h-4 w-28" />
+              ) : (
+                <StatusDot status={data.discord_status} />
+              )}
+            </div>
           </div>
 
-          {/* Live Discord status thought-bubble. */}
-          <StatusBubble
-            status={data?.discord_status}
-            connecting={loading || !data}
-          />
+          {/* Live Discord custom status message. */}
+          <AnimatePresence>
+            {customStatus && <StatusBubble status={customStatus} />}
+          </AnimatePresence>
         </div>
 
         {/* Bio rotation */}

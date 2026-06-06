@@ -25,6 +25,14 @@ export interface ActivityAssets {
   small_text?: string;
 }
 
+export interface ActivityEmoji {
+  /** Present for custom (server) emoji — build a CDN URL from it. */
+  id?: string;
+  /** Unicode character for standard emoji, or the name for custom emoji. */
+  name?: string;
+  animated?: boolean;
+}
+
 /** Discord activity object. `type`:
  *  0 Playing · 1 Streaming · 2 Listening · 3 Watching · 4 Custom · 5 Competing */
 export interface Activity {
@@ -36,6 +44,8 @@ export interface Activity {
   application_id?: string;
   timestamps?: ActivityTimestamps;
   assets?: ActivityAssets;
+  /** Present on the custom status activity (type 4). */
+  emoji?: ActivityEmoji;
   /** Present on streaming activities (type 1). */
   url?: string;
 }

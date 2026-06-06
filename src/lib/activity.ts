@@ -1,7 +1,23 @@
 /* Turns a raw Lanyard payload into a single, presentation-ready activity,
  * applying the priority: Spotify > Watching > Playing. */
 
-import type { Activity, LanyardData } from "./lanyard";
+import type { Activity, ActivityEmoji, LanyardData } from "./lanyard";
+
+export interface CustomStatus {
+  text?: string;
+  emoji?: ActivityEmoji;
+}
+
+/** Extract the Discord custom status message (activity type 4): its text
+ *  (`state`) and optional emoji. Returns null when none is set. */
+export function getCustomStatus(data: LanyardData | null): CustomStatus | null {
+  if (!data) return null;
+  const custom = data.activities?.find((a) => a.type === 4);
+  if (!custom) return null;
+  const text = custom.state?.trim();
+  if (!text && !custom.emoji) return null;
+  return { text: text || undefined, emoji: custom.emoji };
+}
 
 export type FeaturedActivity =
   | {
