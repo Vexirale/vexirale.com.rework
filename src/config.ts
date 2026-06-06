@@ -51,10 +51,14 @@ export interface Project {
 export interface Social {
   /** e.g. "GitHub" — used as the accessible label / tooltip. */
   label: string;
-  /** e.g. "https://github.com/..." */
+  /** e.g. "https://github.com/..." (or a "mailto:" address). */
   url: string;
   /** A lucide-react icon name, e.g. "Github". See https://lucide.dev */
   icon: string;
+  /** Optional. When set, clicking the icon opens a small glass popover showing
+   *  this message instead of navigating away. `url` becomes a link inside the
+   *  popover (a "mailto:" address is shown as the clickable text). */
+  popup?: string;
 }
 
 export const siteConfig = {
@@ -122,7 +126,12 @@ PLACEHOLDER — replace this with your own write-up.
       url: "https://discord.com/users/852601534759567410",
       icon: "MessageCircle",
     },
-    { label: "Email", url: "mailto:PLACEHOLDER", icon: "Mail" },
+    {
+      label: "Email",
+      url: "mailto:inquiries@vexirale.com",
+      icon: "Mail",
+      popup: "Questions?",
+    },
     // add or remove here...
   ] as Social[],
 };

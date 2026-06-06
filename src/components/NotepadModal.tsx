@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { X } from "lucide-react";
@@ -33,7 +33,45 @@ export function NotepadModal({
 }) {
   const reduced = useReducedMotion();
   const closeRef = useRef<HTMLButtonElement>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
   const open = Boolean(project);
+
+  // Fast typewriter reveal of the note text when it opens.
+  const fullText = project?.content ?? "";
+  const [typed, setTyped] = useState(0);
+  const done = typed >= fullText.length;
+
+  useEffect(() => {
+    if (!project) {
+      setTyped(0);
+      return;
+    }
+    if (reduced) {
+      setTyped(fullText.length);
+      return;
+    }
+    setTyped(0);
+    // Finish in roughly the same short time regardless of length: chars/tick
+    // scales with the text so it always feels like a quick burst of typing.
+    const step = Math.max(1, Math.ceil(fullText.length / 45));
+    const id = setInterval(() => {
+      setTyped((n) => {
+        const next = n + step;
+        if (next >= fullText.length) {
+          clearInterval(id);
+          return fullText.length;
+        }
+        return next;
+      });
+    }, 16);
+    return () => clearInterval(id);
+  }, [project, reduced, fullText]);
+
+  // Keep the latest typed line in view while the text streams in.
+  useEffect(() => {
+    const el = bodyRef.current;
+    if (el && !done) el.scrollTop = el.scrollHeight;
+  }, [typed, done]);
 
   // Esc to close, lock background scroll, and manage focus while open.
   useEffect(() => {
@@ -111,13 +149,16 @@ export function NotepadModal({
               </button>
             </div>
 
-            {/* Note body — monospace, whitespace preserved, scrollable. */}
-            <div className="overflow-y-auto px-5 py-5 sm:px-6">
+            {/* Note body — monospace, whitespace preserved, typed in, scrollable. */}
+            <div ref={bodyRef} className="overflow-y-auto px-5 py-5 sm:px-6">
               <pre
                 className="whitespace-pre-wrap break-words pl-4 font-mono text-[13px] leading-relaxed text-white/80"
                 style={{ borderLeft: `2px solid ${accentLine}` }}
               >
-                {project.content}
+                {fullText.slice(0, typed)}
+                {!done && (
+                  <span className="ml-px animate-pulse text-white/70">▋</span>
+                )}
               </pre>
             </div>
           </motion.div>
