@@ -63,14 +63,20 @@ export interface Social {
 
 export const siteConfig = {
   name: "vexirale",
-  tagline: "PLACEHOLDER tagline",
+  tagline: "Discover me & my projects.",
   discordUserId: "852601534759567410",
   accentColor: "#ffffff",
 
   bioLines: [
-    "PLACEHOLDER bio line 1",
-    "PLACEHOLDER bio line 2",
-    "PLACEHOLDER bio line 3",
+    "Welcome i guess 😭😭",
+    "Im slow so I like when people explain stuff",
+    "omg so tuff i got my own domain",
+    "born in 2008",
+    "tiktok addicted ig",
+    "i bench 5kg btw (on both sides)",
+    "ouxi gt2000 go brrr",
+    "can you tell that my music taste is fried?",
+    "uhhh okay idk what else to add",
   ],
 
   projects: [
@@ -79,7 +85,7 @@ export const siteConfig = {
       title: "Fritsparts",
       description: "PLACEHOLDER one-liner",
       url: "https://fritsparts.com",
-      tags: ["Web"],
+      tags: ["Graduation Project"],
       image: "/projects/fritsparts.png",
     },
     {
@@ -93,7 +99,7 @@ export const siteConfig = {
       // showing the `content` below (the background blurs behind it). Edit the
       // text freely — line breaks and blank lines are preserved.
       title: "UKC1 Reverse Engineering",
-      description: "Reverse-engineering notes — click to open the notepad.",
+      description: "UKC1 RE showcase — click to open the notepad.",
       tags: ["Reverse Engineering", "Notes"],
       content: `UKC1 — REVERSE ENGINEERING NOTES
 ================================
@@ -131,6 +137,11 @@ PLACEHOLDER — replace this with your own write-up.
       url: "mailto:inquiries@vexirale.com",
       icon: "Mail",
       popup: "Questions?",
+    },
+    {
+      label: "Roblox",
+      url: "https://roblox.com/useds",
+      icon: "gamepad-2",
     },
     // add or remove here...
   ] as Social[],
