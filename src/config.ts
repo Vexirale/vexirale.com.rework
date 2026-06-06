@@ -119,7 +119,8 @@ export const siteConfig = {
     "ouxi gt2000 go brrr",
     "i want a cat :(",
     "omg so tufff i got my own domain",
-    "okay idk what else to add, instead of stalking me.. talk to me!"
+    "okay idk what else to add, instead of stalking me.. talk to me!",
+    "if im listening to brazilian funk... im probably at the gym, heh.",
   ],
 
   projects: [
