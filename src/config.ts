@@ -123,6 +123,9 @@ export const siteConfig = {
     "if im listening to brazilian funk... im probably at the gym, heh.",
     "HAPPY BIRTHDAY DANIEL!!!! DID YOU SAY STAIRS!!?!?!?!?",
     "lock in.",
+    "hmph!",
+    "viltrumite mark HOLY PEAAKK!!!",
+    "whats a high tier human, to a low tier god.",
   ],
 
   projects: [
