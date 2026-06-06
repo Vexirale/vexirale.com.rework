@@ -110,17 +110,31 @@ export const siteConfig = {
   },
 
   bioLines: [
-    "PLACEHOLDER bio line 1",
+    "hi!! welcome to my portfolio",
     // The {visitors} token is replaced with this week's live visitor count.
-    "👀 {visitors} visitors stopped by this week",
-    "PLACEHOLDER bio line 3",
+    "{visitors} visitors stopped by this week (including you!)",
+    "im slow so i like when people explain stuff",
+    "im probably doomscrolling on tiktok rn",
+    "yayayayayay",
+    "how'd you know my music taste is fried?",
+    "born in 2008 btw",
+    "ouxi gt2000 go brrr",
+    "i want a cat :(",
+    "omg so tufff i got my own domain",
+    "okay idk what else to add, instead of stalking me.. talk to me!",
+    "if im listening to brazilian funk... im probably at the gym, heh.",
+    "HAPPY BIRTHDAY DANIEL!!!! DID YOU SAY STAIRS!!?!?!?!?",
+    "lock in.",
+    "hmph!",
+    "viltrumite mark HOLY PEAAKK!!!",
+    "whats a high tier human, to a low tier god.",
   ],
 
   projects: [
     // EXAMPLE entries. Edit, add, or remove freely.
     {
       title: "Fritsparts",
-      description: "PLACEHOLDER one-liner",
+      description: "A silly lil vibecoded website for my MAVO4 PWS. aka graduation project.",
       url: "https://fritsparts.com",
       tags: ["Graduation Project"],
       image: "/projects/fritsparts.png",
@@ -128,9 +142,9 @@ export const siteConfig = {
     },
     {
       title: "Fatbike Parts",
-      description: "PLACEHOLDER one-liner",
+      description: "My webshop regarding fatbike parts, custom parts made right here in the netherlands!",
       url: "https://fatbikeparts.eu",
-      tags: ["E-commerce"],
+      tags: ["E-commerce", "Relaunching soon?"],
       status: "finished",
     },
     {
@@ -144,29 +158,54 @@ export const siteConfig = {
       content: `UKC1 — REVERSE ENGINEERING NOTES
 ================================
 
-PLACEHOLDER — replace this with your own write-up.
+Soooo yeah, Dont really know how to begin this...
 
 > Overview
-  A short summary of what UKC1 is and why you took it apart.
+ UKC1, A famous universal ebike display. but yet... so fucking undocumented...
+ Although there is a flasher tool (uploaded and leaked it to the public myself.)
+ theres... zero to NO.. documenation online on how to actually customize it.
+
+ I did hear that you can purchase a $600 tool from UKRiver themselves.. buttt, lets be honest
+ i aint got that kinda money..
+
+ So I did it myself, Launched a Claude sesh. Launched Ghidra, and HXD ofc.
+
+ Thankfully RISUNMOTOR did drop their .bin firmware but man is that hard to reverese engineer.
 
 > Tools
-  - PLACEHOLDER (e.g. Ghidra, IDA, Wireshark, ...)
-  - PLACEHOLDER
+  - Claude Opus 4.8
+  - Ghidra
+  - HxD
 
 > Findings
-  1. PLACEHOLDER finding one.
-  2. PLACEHOLDER finding two.
-  3. PLACEHOLDER finding three.
+uhhh ill do this later
+  
+> Accomplishments
+  - Succesfully enabled a Dual Entry passcode system
+    for.. heh.. Off-Road and Road use.
+
+    Lets say you start the bike, you get prompted with a passcode login screen on entry,
+    You enter: 1234 -> Bike is in 'off-road' mode and doesnt have a speed limit.
+
+    Okay, now lets say you want to use it for road-use
+    You enter: 1111 -> Bike is in 'road' mode, 100% legal with the speed limited to 25km/h
+
+    Road mode only writes 25kmh to RAM, not EEPROM. but hey if it works, it works.. right?
+
+    - Succesfully coded a killswitch.
+      Replaced the Walk assist function,
+      With some lil teeny tiny thing that overwrites the speed limit string to 25kmh.
+      When holding down the '-' key for 1.5s
+      Writes it to RAM, not EEPROM. so thats why the Dual Entry passcode system is in place.
 
 > Notes
-  Anything else you want to jot down. Blank lines and
-  indentation are kept exactly as written here.`,
+  fuck this stupid display is SO hard to reverse engineer`,
     },
     // add more here...
   ] as Project[],
 
   socials: [
-    { label: "GitHub", url: "https://github.com/PLACEHOLDER", icon: "Github" },
+    { label: "GitHub", url: "https://github.com/Vexirale", icon: "Github" },
     {
       label: "Discord",
       url: "https://discord.com/users/852601534759567410",
@@ -180,7 +219,7 @@ PLACEHOLDER — replace this with your own write-up.
     },
     {
       label: "Roblox",
-      url: "https://roblox.com/useds",
+      url: "https://www.roblox.com/users/487582825/",
       icon: "si:roblox",
     },
     // add or remove here...
