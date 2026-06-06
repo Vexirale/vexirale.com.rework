@@ -69,22 +69,9 @@ body {
   border-radius: 999px;
 }
 
-/* Background orb field: one big blur merges the orbs into a liquid gradient.
-   `.animate-hue` slowly rotates the whole palette through the spectrum so the
-   colors continuously transform (full-motion devices only). */
+/* Background orb field: one big blur merges the orbs into a liquid gradient. */
 .orb-field {
   filter: blur(64px);
-}
-@keyframes hueCycle {
-  0% {
-    filter: blur(64px) hue-rotate(0deg);
-  }
-  100% {
-    filter: blur(64px) hue-rotate(360deg);
-  }
-}
-.animate-hue {
-  animation: hueCycle 60s linear infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {

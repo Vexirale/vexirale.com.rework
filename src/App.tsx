@@ -35,7 +35,7 @@ export default function App() {
 
   return (
     <>
-      <Background accent={accent} playing={featured?.kind === "spotify"} />
+      <Background albumArt={albumArt} />
 
       <AnimatePresence mode="wait">
         {entered ? (
