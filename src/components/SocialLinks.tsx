@@ -6,6 +6,7 @@ import {
   Dribbble,
   Facebook,
   Figma,
+  Gamepad2,
   Github,
   Gitlab,
   Globe,
@@ -63,12 +64,19 @@ const ICONS: Record<string, ComponentType<LucideProps>> = {
   Heart,
   Star,
   MapPin,
+  Gamepad2,
 };
+
+// Normalized lookup so any casing/format works ("Gamepad2", "gamepad-2",
+// "gamepad2" all match).
+const NORMALIZED: Record<string, ComponentType<LucideProps>> = Object.fromEntries(
+  Object.entries(ICONS).map(([k, v]) => [k.replace(/[^a-z0-9]/gi, "").toLowerCase(), v]),
+);
 
 /** Resolve a config icon name to a component, falling back to a generic link
  *  icon so an unknown name never breaks the render. */
 function iconFor(name: string): ComponentType<LucideProps> {
-  return ICONS[name] ?? LinkIcon;
+  return NORMALIZED[name.replace(/[^a-z0-9]/gi, "").toLowerCase()] ?? LinkIcon;
 }
 
 const buttonClass =

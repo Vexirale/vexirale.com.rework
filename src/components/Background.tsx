@@ -56,32 +56,32 @@ export function Background({ accent }: BackgroundProps) {
       <Blob
         className="left-[-10%] top-[-12%] h-[52vmax] w-[52vmax] opacity-[0.22]"
         color="radial-gradient(circle at center, #4b338a, transparent 70%)"
-        duration={34}
-        path={{ x: [0, 80, 40, -40, 0], y: [0, 50, 120, 60, 0], scale: [1, 1.08, 0.96, 1.05, 1] }}
+        duration={9}
+        path={{ x: [0, 120, 60, -60, 0], y: [0, 70, 160, 90, 0], scale: [1, 1.12, 0.92, 1.08, 1] }}
         animate={animate}
       />
       <Blob
         className="right-[-15%] top-[6%] h-[46vmax] w-[46vmax] opacity-[0.2]"
         color="radial-gradient(circle at center, #155e7a, transparent 70%)"
-        duration={40}
-        delay={1.5}
-        path={{ x: [0, -70, -30, 50, 0], y: [0, 60, 130, 70, 0], scale: [1, 1.1, 0.95, 1.06, 1] }}
+        duration={11}
+        delay={0.6}
+        path={{ x: [0, -100, -40, 70, 0], y: [0, 90, 180, 100, 0], scale: [1, 1.14, 0.9, 1.1, 1] }}
         animate={animate}
       />
       <Blob
         className="bottom-[-22%] left-[18%] h-[56vmax] w-[56vmax] opacity-[0.18]"
         color="radial-gradient(circle at center, #6e2068, transparent 70%)"
-        duration={46}
-        delay={3}
-        path={{ x: [0, 60, -50, -20, 0], y: [0, -60, -30, -80, 0], scale: [1, 1.07, 1.12, 0.97, 1] }}
+        duration={8}
+        delay={1.1}
+        path={{ x: [0, 90, -70, -30, 0], y: [0, -90, -40, -120, 0], scale: [1, 1.1, 1.16, 0.94, 1] }}
         animate={animate}
       />
       <Blob
         className="right-[10%] bottom-[-10%] h-[40vmax] w-[40vmax] opacity-[0.16]"
         color="radial-gradient(circle at center, #2a3f8f, transparent 70%)"
-        duration={38}
-        delay={2.2}
-        path={{ x: [0, -50, 40, 30, 0], y: [0, -40, -90, -30, 0], scale: [1, 1.1, 0.94, 1.05, 1] }}
+        duration={10}
+        delay={0.4}
+        path={{ x: [0, -80, 60, 45, 0], y: [0, -60, -130, -45, 0], scale: [1, 1.14, 0.9, 1.08, 1] }}
         animate={animate}
       />
 
@@ -94,8 +94,8 @@ export function Background({ accent }: BackgroundProps) {
           opacity: 0.14,
           transition: "background 1.2s ease",
         }}
-        animate={animate ? { x: [0, 40, -30, 0], y: [0, -30, 40, 0] } : undefined}
-        transition={{ duration: 44, repeat: Infinity, ease: "easeInOut" }}
+        animate={animate ? { x: [0, 60, -40, 0], y: [0, -50, 60, 0] } : undefined}
+        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
       />
 
       {/* Sparse upward-drifting particles + the occasional meteor (full mode). */}

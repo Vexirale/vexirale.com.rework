@@ -45,21 +45,6 @@ export function StatusBubble({ status }: { status: CustomStatus }) {
       exit={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.85, y: -4 }}
       transition={{ type: "spring", stiffness: 200, damping: 18 }}
     >
-      {/* Trailing thought-bubble dots leading down toward the avatar. Plain
-          translucent fills (no backdrop-filter) to keep them cheap. */}
-      <motion.span
-        aria-hidden
-        className="absolute -bottom-1 left-1 h-2 w-2 rounded-full border border-white/10 bg-white/[0.08]"
-        animate={idle ? undefined : { y: [0, -2, 0] }}
-        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.2 }}
-      />
-      <motion.span
-        aria-hidden
-        className="absolute bottom-1 left-3 h-3 w-3 rounded-full border border-white/10 bg-white/[0.08]"
-        animate={idle ? undefined : { y: [0, -3, 0] }}
-        transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut", delay: 0.1 }}
-      />
-
       {/* Main bubble. Text wraps onto multiple lines (with a sane cap) instead
           of being clipped. */}
       <motion.div
@@ -78,6 +63,22 @@ export function StatusBubble({ status }: { status: CustomStatus }) {
           </span>
         )}
       </motion.div>
+
+      {/* Thought-bubble tail: two dots descending below-left toward the avatar,
+          sitting outside the main bubble so they never clip inside it. Plain
+          translucent fills (no backdrop-filter) to keep them cheap. */}
+      <motion.span
+        aria-hidden
+        className="absolute left-3 top-full mt-1 h-2.5 w-2.5 rounded-full border border-white/10 bg-white/[0.1]"
+        animate={idle ? undefined : { y: [0, -2, 0] }}
+        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.2 }}
+      />
+      <motion.span
+        aria-hidden
+        className="absolute left-0 top-full mt-[14px] h-1.5 w-1.5 rounded-full border border-white/10 bg-white/[0.1]"
+        animate={idle ? undefined : { y: [0, -2, 0] }}
+        transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut", delay: 0.1 }}
+      />
     </motion.div>
   );
 }

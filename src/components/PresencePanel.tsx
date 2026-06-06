@@ -56,20 +56,20 @@ export function PresencePanel({
             </div>
           </div>
 
-          {/* Right column: custom-status thought-bubble + local/owner time. */}
-          <div className="flex shrink-0 flex-col items-end gap-2 pt-1">
-            <AnimatePresence>
-              {customStatus && <StatusBubble status={customStatus} />}
-            </AnimatePresence>
-            <TimeIndicator />
-          </div>
+          {/* Live Discord custom status message (thought bubble). */}
+          <AnimatePresence>
+            {customStatus && <StatusBubble status={customStatus} />}
+          </AnimatePresence>
         </div>
 
         {/* Bio rotation */}
         <BioRotator lines={siteConfig.bioLines} visitors={visitors} />
 
-        {/* Socials */}
-        <SocialLinks socials={siteConfig.socials} />
+        {/* Socials + local/owner clock widget */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <SocialLinks socials={siteConfig.socials} />
+          <TimeIndicator />
+        </div>
 
         {/* Live activity card — collapses cleanly when idle. */}
         {loading ? (

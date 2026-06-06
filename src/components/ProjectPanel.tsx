@@ -1,46 +1,64 @@
 import { useState, type ReactNode } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { ArrowUpRight, FileText } from "lucide-react";
+import { ArrowUpRight, Check, FileText } from "lucide-react";
 import type { Project } from "../config";
 import type { Rgb } from "../lib/color";
 import { rgbToCss, rgbToRgba } from "../lib/color";
 import { GlassPanel } from "./GlassPanel";
 
-/** "Active development" indicator: a pulsing dot + an indeterminate progress
- *  bar tinted with the current theme/accent color (album-art color while music
- *  plays). */
-function ActiveBar({ accent }: { accent: Rgb }) {
+/** Development status bar tinted with the current theme/accent color (album-art
+ *  color while music plays). "active" shows an animated indeterminate bar;
+ *  "finished" shows a completed bar with a check. */
+function StatusBar({
+  status,
+  accent,
+}: {
+  status: NonNullable<Project["status"]>;
+  accent: Rgb;
+}) {
   const reduced = useReducedMotion();
   const color = rgbToCss(accent);
+  const finished = status === "finished";
 
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center gap-1.5">
-        <span
-          className="h-2 w-2 rounded-full"
-          style={{ backgroundColor: color, boxShadow: `0 0 6px ${color}` }}
-        />
+        {finished ? (
+          <Check className="h-3 w-3" style={{ color: rgbToRgba(accent, 0.9) }} />
+        ) : (
+          <span
+            className="h-2 w-2 rounded-full"
+            style={{ backgroundColor: color, boxShadow: `0 0 6px ${color}` }}
+          />
+        )}
         <span
           className="font-mono text-[10px] uppercase tracking-wider"
-          style={{ color: rgbToRgba(accent, 0.9) }}
+          style={{ color: rgbToRgba(accent, finished ? 0.6 : 0.9) }}
         >
-          Active development
+          {finished ? "Development finished" : "Active development"}
         </span>
       </div>
       <div className="relative h-1 overflow-hidden rounded-full bg-white/10">
-        <motion.div
-          className="absolute inset-y-0 w-1/3 rounded-full"
-          style={{
-            background: `linear-gradient(90deg, transparent, ${color}, transparent)`,
-          }}
-          initial={{ x: "-110%" }}
-          animate={reduced ? { x: "150%" } : { x: ["-110%", "320%"] }}
-          transition={
-            reduced
-              ? { duration: 0 }
-              : { duration: 1.8, repeat: Infinity, ease: "easeInOut" }
-          }
-        />
+        {finished ? (
+          <div
+            className="absolute inset-y-0 left-0 w-full rounded-full"
+            style={{ background: rgbToRgba(accent, 0.55) }}
+          />
+        ) : (
+          <motion.div
+            className="absolute inset-y-0 w-1/3 rounded-full"
+            style={{
+              background: `linear-gradient(90deg, transparent, ${color}, transparent)`,
+            }}
+            initial={{ x: "-110%" }}
+            animate={reduced ? { x: "150%" } : { x: ["-110%", "320%"] }}
+            transition={
+              reduced
+                ? { duration: 0 }
+                : { duration: 1.8, repeat: Infinity, ease: "easeInOut" }
+            }
+          />
+        )}
       </div>
     </div>
   );
@@ -110,7 +128,7 @@ export function ProjectPanel({
           {project.description}
         </p>
 
-        {project.active && <ActiveBar accent={accent} />}
+        {project.status && <StatusBar status={project.status} accent={accent} />}
 
         {project.tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5">

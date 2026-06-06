@@ -58,10 +58,12 @@ export interface Project {
    *  notepad-style modal (the background blurs) showing this text instead of
    *  navigating to `url`. Use a template string with line breaks for layout. */
   content?: string;
-  /** Optional. Set true to show an animated "Active development" status bar on
-   *  the panel, tinted with the current theme/accent color (the album-art
-   *  color while music is playing). */
-  active?: boolean;
+  /** Optional development status bar on the panel, tinted with the current
+   *  theme/accent color (the album-art color while music is playing):
+   *   • "active"   — animated "Active development" bar
+   *   • "finished" — completed bar with a check
+   *  Omit for no status bar. */
+  status?: "active" | "finished";
 }
 
 export interface Social {
@@ -120,13 +122,14 @@ export const siteConfig = {
       url: "https://fritsparts.com",
       tags: ["Graduation Project"],
       image: "/projects/fritsparts.png",
-      active: true,
+      status: "finished",
     },
     {
       title: "Fatbike Parts",
       description: "PLACEHOLDER one-liner",
       url: "https://fatbikeparts.eu",
       tags: ["E-commerce"],
+      status: "finished",
     },
     {
       // A "note" project: no `url`, so clicking opens a notepad-style modal
@@ -135,6 +138,7 @@ export const siteConfig = {
       title: "UKC1 Reverse Engineering",
       description: "UKC1 RE showcase — click to open the notepad.",
       tags: ["Reverse Engineering", "Notes"],
+      status: "active",
       content: `UKC1 — REVERSE ENGINEERING NOTES
 ================================
 
