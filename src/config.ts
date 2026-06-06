@@ -25,8 +25,12 @@
  *                           clean generated placeholder instead.
  *
  *  • socials .............. Each entry becomes one icon link. `icon` is the
- *                           NAME of a lucide-react icon (https://lucide.dev).
- *                           e.g. "Github", "Mail", "Twitter", "MessageCircle".
+ *                           NAME of a lucide icon (https://lucide.dev), e.g.
+ *                           "Github", "Mail", "Twitter", "MessageCircle".
+ *                           A curated set is bundled (see ICONS in
+ *                           components/SocialLinks.tsx); to use one that isn't
+ *                           listed, add it to that map (one line). Unknown
+ *                           names fall back to a generic link icon.
  *
  *  The avatar, status, and live activity (Spotify / watching / playing) are
  *  fully automatic from Lanyard and need no config beyond discordUserId.

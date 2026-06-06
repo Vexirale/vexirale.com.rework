@@ -1,16 +1,74 @@
-import { useEffect, useRef, useState } from "react";
-import * as Icons from "lucide-react";
-import type { LucideProps } from "lucide-react";
+import { useEffect, useRef, useState, type ComponentType } from "react";
+import {
+  AtSign,
+  Coffee,
+  Codepen,
+  Dribbble,
+  Facebook,
+  Figma,
+  Github,
+  Gitlab,
+  Globe,
+  Hash,
+  Headphones,
+  Heart,
+  Instagram,
+  Link as LinkIcon,
+  Linkedin,
+  type LucideProps,
+  Mail,
+  MapPin,
+  MessageCircle,
+  Music,
+  Phone,
+  Rss,
+  Send,
+  Slack,
+  Star,
+  Twitch,
+  Twitter,
+  Youtube,
+} from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import type { ComponentType } from "react";
 import type { Social } from "../config";
 
-/** Look up a lucide-react icon component by its config name (e.g. "Github").
- *  Falls back to a generic Link icon if the name doesn't exist, so a typo in
- *  config never breaks the render. */
+/* Curated icon set, statically imported so only these icons are bundled
+ * (keeps the JS small). Add more here if you need an icon that isn't listed —
+ * import it above and add a line below, then use its name in config. */
+const ICONS: Record<string, ComponentType<LucideProps>> = {
+  Github,
+  Gitlab,
+  Mail,
+  MessageCircle,
+  Twitter,
+  Instagram,
+  Youtube,
+  Linkedin,
+  Twitch,
+  Facebook,
+  Slack,
+  Figma,
+  Dribbble,
+  Codepen,
+  Globe,
+  Link: LinkIcon,
+  Send,
+  Phone,
+  AtSign,
+  Hash,
+  Rss,
+  Music,
+  Headphones,
+  Coffee,
+  Heart,
+  Star,
+  MapPin,
+};
+
+/** Resolve a config icon name to a component, falling back to a generic link
+ *  icon so an unknown name never breaks the render. */
 function iconFor(name: string): ComponentType<LucideProps> {
-  const map = Icons as unknown as Record<string, ComponentType<LucideProps>>;
-  return map[name] ?? Icons.Link;
+  return ICONS[name] ?? LinkIcon;
 }
 
 const buttonClass =

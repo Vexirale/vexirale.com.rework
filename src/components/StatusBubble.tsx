@@ -1,5 +1,6 @@
 import { motion, useReducedMotion } from "framer-motion";
 import type { CustomStatus } from "../lib/activity";
+import { useLite } from "../hooks/useLite";
 
 /** Render a Discord custom-status emoji: a custom (server) emoji as an image,
  *  or a standard unicode emoji as text. */
@@ -25,8 +26,11 @@ function EmojiBit({ emoji }: { emoji: CustomStatus["emoji"] }) {
  *  gently. Rendered only when a custom status is set. */
 export function StatusBubble({ status }: { status: CustomStatus }) {
   const reduced = useReducedMotion();
+  const lite = useLite();
+  // No continuous motion on phones / weak GPUs (it forces backdrop re-blurs).
+  const idle = reduced || lite;
 
-  const float = reduced
+  const float = idle
     ? undefined
     : {
         y: [0, -5, 0],
@@ -41,17 +45,18 @@ export function StatusBubble({ status }: { status: CustomStatus }) {
       exit={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.85, y: -4 }}
       transition={{ type: "spring", stiffness: 200, damping: 18 }}
     >
-      {/* Trailing thought-bubble dots leading down toward the avatar. */}
+      {/* Trailing thought-bubble dots leading down toward the avatar. Plain
+          translucent fills (no backdrop-filter) to keep them cheap. */}
       <motion.span
         aria-hidden
-        className="glass absolute -bottom-1 left-1 h-2 w-2 rounded-full"
-        animate={reduced ? undefined : { y: [0, -2, 0] }}
+        className="absolute -bottom-1 left-1 h-2 w-2 rounded-full border border-white/10 bg-white/[0.08]"
+        animate={idle ? undefined : { y: [0, -2, 0] }}
         transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.2 }}
       />
       <motion.span
         aria-hidden
-        className="glass absolute bottom-1 left-3 h-3 w-3 rounded-full"
-        animate={reduced ? undefined : { y: [0, -3, 0] }}
+        className="absolute bottom-1 left-3 h-3 w-3 rounded-full border border-white/10 bg-white/[0.08]"
+        animate={idle ? undefined : { y: [0, -3, 0] }}
         transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut", delay: 0.1 }}
       />
 

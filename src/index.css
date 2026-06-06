@@ -31,9 +31,13 @@ body {
 /* Reusable frosted-glass surface. */
 @layer components {
   .glass {
-    background: rgba(255, 255, 255, 0.06);
-    backdrop-filter: blur(16px) saturate(140%);
-    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    /* A slightly higher base fill + a smaller blur radius keeps the frosted
+       look while making backdrop-filter much cheaper to compute per frame
+       (blur cost scales with the radius). saturate() is intentionally omitted
+       as it noticeably raises backdrop-filter cost. */
+    background: rgba(255, 255, 255, 0.07);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow:
       0 8px 32px rgba(0, 0, 0, 0.45),
