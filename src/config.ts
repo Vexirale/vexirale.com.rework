@@ -35,11 +35,17 @@
 export interface Project {
   title: string;
   description: string;
-  url: string;
+  /** External link opened in a new tab when the panel is clicked.
+   *  Omit it for "note" projects that use `content` instead (see below). */
+  url?: string;
   tags: string[];
   /** Optional thumbnail: a path in /public (e.g. "/projects/foo.png") or a URL.
    *  If omitted, the panel renders a clean generated placeholder. */
   image?: string;
+  /** Optional notepad text. When set, clicking the panel opens a focused,
+   *  notepad-style modal (the background blurs) showing this text instead of
+   *  navigating to `url`. Use a template string with line breaks for layout. */
+  content?: string;
 }
 
 export interface Social {
@@ -77,6 +83,34 @@ export const siteConfig = {
       description: "PLACEHOLDER one-liner",
       url: "https://fatbikeparts.eu",
       tags: ["E-commerce"],
+    },
+    {
+      // A "note" project: no `url`, so clicking opens a notepad-style modal
+      // showing the `content` below (the background blurs behind it). Edit the
+      // text freely — line breaks and blank lines are preserved.
+      title: "UKC1 Reverse Engineering",
+      description: "Reverse-engineering notes — click to open the notepad.",
+      tags: ["Reverse Engineering", "Notes"],
+      content: `UKC1 — REVERSE ENGINEERING NOTES
+================================
+
+PLACEHOLDER — replace this with your own write-up.
+
+> Overview
+  A short summary of what UKC1 is and why you took it apart.
+
+> Tools
+  - PLACEHOLDER (e.g. Ghidra, IDA, Wireshark, ...)
+  - PLACEHOLDER
+
+> Findings
+  1. PLACEHOLDER finding one.
+  2. PLACEHOLDER finding two.
+  3. PLACEHOLDER finding three.
+
+> Notes
+  Anything else you want to jot down. Blank lines and
+  indentation are kept exactly as written here.`,
     },
     // add more here...
   ] as Project[],

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { ArrowUpRight } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { ArrowUpRight, FileText } from "lucide-react";
 import type { Project } from "../config";
 import type { Rgb } from "../lib/color";
 import { rgbToRgba } from "../lib/color";
@@ -26,15 +26,78 @@ function Placeholder({ title, accent }: { title: string; accent: Rgb }) {
 export function ProjectPanel({
   project,
   accent,
+  onOpenNote,
 }: {
   project: Project;
   accent: Rgb;
+  /** Called when a "note" project (one with `content`) is activated. */
+  onOpenNote: (project: Project) => void;
 }) {
   const [imgError, setImgError] = useState(false);
   const showImage = project.image && !imgError;
+  const isNote = Boolean(project.content);
 
-  return (
-    <GlassPanel accent={accent} tilt className="flex h-full flex-col">
+  const inner = (
+    <>
+      {/* Thumbnail or placeholder */}
+      <div className="relative overflow-hidden rounded-t-3xl border-b border-white/10">
+        {showImage ? (
+          <img
+            src={project.image}
+            alt={project.title}
+            loading="lazy"
+            onError={() => setImgError(true)}
+            className="h-40 w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <Placeholder title={project.title} accent={accent} />
+        )}
+      </div>
+
+      {/* Body */}
+      <div className="flex flex-1 flex-col gap-3 p-5">
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="text-lg font-semibold text-white">{project.title}</h3>
+          {isNote ? (
+            <FileText className="h-5 w-5 shrink-0 text-white/40 transition-colors group-hover:text-white" />
+          ) : (
+            <ArrowUpRight className="h-5 w-5 shrink-0 text-white/40 transition-colors group-hover:text-white" />
+          )}
+        </div>
+
+        <p className="flex-1 text-sm leading-relaxed text-white/60">
+          {project.description}
+        </p>
+
+        {project.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {project.tags.map((tag) => (
+              <span
+                key={tag}
+                className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-white/55"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+    </>
+  );
+
+  // Note projects open a modal; everything else links out. Both share the
+  // same panel chrome and the translateZ lift used by the 3D tilt.
+  const surface = (children: ReactNode) =>
+    isNote ? (
+      <button
+        type="button"
+        onClick={() => onOpenNote(project)}
+        className="flex h-full flex-col text-left"
+        style={{ transform: "translateZ(20px)" }}
+      >
+        {children}
+      </button>
+    ) : (
       <a
         href={project.url}
         target="_blank"
@@ -42,48 +105,13 @@ export function ProjectPanel({
         className="flex h-full flex-col"
         style={{ transform: "translateZ(20px)" }}
       >
-        {/* Thumbnail or placeholder */}
-        <div className="relative overflow-hidden rounded-t-3xl border-b border-white/10">
-          {showImage ? (
-            <img
-              src={project.image}
-              alt={project.title}
-              loading="lazy"
-              onError={() => setImgError(true)}
-              className="h-40 w-full object-cover transition-transform duration-500 group-hover:scale-105"
-            />
-          ) : (
-            <Placeholder title={project.title} accent={accent} />
-          )}
-        </div>
-
-        {/* Body */}
-        <div className="flex flex-1 flex-col gap-3 p-5">
-          <div className="flex items-start justify-between gap-2">
-            <h3 className="text-lg font-semibold text-white">
-              {project.title}
-            </h3>
-            <ArrowUpRight className="h-5 w-5 shrink-0 text-white/40 transition-colors group-hover:text-white" />
-          </div>
-
-          <p className="flex-1 text-sm leading-relaxed text-white/60">
-            {project.description}
-          </p>
-
-          {project.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {project.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-white/55"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
+        {children}
       </a>
+    );
+
+  return (
+    <GlassPanel accent={accent} tilt className="flex h-full flex-col">
+      {surface(inner)}
     </GlassPanel>
   );
 }
