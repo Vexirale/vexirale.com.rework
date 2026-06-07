@@ -105,7 +105,7 @@ export const siteConfig = {
   // `theme` to the one you like (catgirl/booru styles: "moebooru", "rule34",
   // "gelbooru", "kasuterura-1".."kasuterura-4", many "booru-*"). `name` must be
   // unique to your site — changing it starts a fresh count.
-  moeCounter: { enabled: true, name: "vexirale-com", theme: "moebooru" },
+  moeCounter: { enabled: true, name: "vexirale-com", theme: "rule34" },
 
   // Weekly visitor counter (uses the free Abacus API; no backend needed). Each
   // ISO week gets its own counter, so it shows "visitors this week". Put the
