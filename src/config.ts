@@ -263,7 +263,7 @@ uhhh ill do this later
     // Always-on entries pinned to the top (live here, not in the DB).
     pinned: [
       {
-        name: "claude",
+        name: "claude • admin",
         message:
           "first. i built the place so it kinda counts, no slurs pls",
       },
