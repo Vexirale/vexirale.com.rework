@@ -13,7 +13,8 @@ import {
 
 const NAME_MAX = 32;
 const MSG_MAX = 280;
-const COOLDOWN_MS = 30_000;
+const COOLDOWN_MS = 24 * 60 * 60 * 1000; // one message per day, per device
+const MIN_FILL_MS = 2500; // submitted faster than this == almost certainly a bot
 // Owner mode: set this in the browser console to reveal delete + like controls:
 //   localStorage.setItem('vx-gb-admin', 'YOUR_SUPABASE_SERVICE_ROLE_KEY')
 // then reload. Remove it with localStorage.removeItem('vx-gb-admin').
@@ -56,6 +57,11 @@ export function Guestbook() {
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
 
+  // Spam traps: a honeypot field bots fill but humans never see, and the time
+  // the form mounted (instant submits are bots).
+  const [honeypot, setHoneypot] = useState("");
+  const mountedAt = useRef(Date.now());
+
   // Owner mode is enabled purely via the console (no UI lock).
   const admin = ls(ADMIN_KEY).trim();
   const isOwner = Boolean(admin);
@@ -79,6 +85,18 @@ export function Guestbook() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError("");
+
+    // Honeypot tripped → a bot. Pretend it worked and drop it silently.
+    if (honeypot) {
+      setMessage("");
+      return;
+    }
+    // Submitted implausibly fast → almost certainly a bot.
+    if (Date.now() - mountedAt.current < MIN_FILL_MS) {
+      setFormError("Hold on a sec, then try again.");
+      return;
+    }
+
     const n = name.trim();
     const m = message.trim();
     if (!n || !m) {
@@ -87,7 +105,7 @@ export function Guestbook() {
     }
     const last = Number(ls(LAST_KEY) || 0);
     if (Date.now() - last < COOLDOWN_MS) {
-      setFormError("You just signed — give it a moment before posting again.");
+      setFormError("You can sign once a day — come back tomorrow! 💤");
       return;
     }
 
@@ -151,6 +169,17 @@ export function Guestbook() {
         <>
           {/* Sign form */}
           <form onSubmit={submit} className="mb-6 flex flex-col gap-3">
+            {/* Honeypot — hidden from humans; bots fill it and get rejected. */}
+            <input
+              type="text"
+              name="website"
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+              value={honeypot}
+              onChange={(e) => setHoneypot(e.target.value)}
+              className="pointer-events-none absolute left-[-9999px] h-0 w-0 opacity-0"
+            />
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}

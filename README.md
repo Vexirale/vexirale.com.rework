@@ -103,6 +103,47 @@ your own:
    alter table guestbook add column if not exists liked boolean not null default false;
    ```
 
+5. **Anti-spam.** The site already blocks bots client-side (a hidden honeypot
+   field, an instant-submit time trap, and a 24h-per-device cooldown). For a
+   real **per-IP** 24h limit enforced server-side, run this once in the SQL
+   editor (stores only a salted hash of the IP, never the IP itself):
+
+   ```sql
+   create extension if not exists pgcrypto with schema extensions;
+   alter table guestbook add column if not exists ip_hash text;
+   -- never expose the hash to the public anon role:
+   revoke select (ip_hash) on guestbook from anon;
+
+   create or replace function guestbook_ratelimit()
+   returns trigger language plpgsql security definer as $$
+   declare
+     ip text;
+   begin
+     ip := split_part(
+       coalesce(current_setting('request.headers', true)::json ->> 'x-forwarded-for', ''),
+       ',', 1);
+     new.ip_hash := encode(
+       extensions.digest('vexirale-salt:' || coalesce(ip, ''), 'sha256'), 'hex');
+     if exists (
+       select 1 from guestbook
+       where ip_hash = new.ip_hash and created_at > now() - interval '24 hours'
+     ) then
+       raise exception 'You can only sign once a day. Come back tomorrow!';
+     end if;
+     return new;
+   end;
+   $$;
+
+   drop trigger if exists guestbook_ratelimit_trg on guestbook;
+   create trigger guestbook_ratelimit_trg
+     before insert on guestbook
+     for each row execute function guestbook_ratelimit();
+   ```
+
+   Change `'vexirale-salt:'` to your own secret string. The exception message is
+   shown to the visitor by the form. (Without this, the 24h limit is per-device
+   only and can be bypassed by clearing storage.)
+
 Leave `supabaseUrl` / `supabaseAnonKey` blank to keep the guestbook hidden
 ("coming soon") until you're ready.
 
