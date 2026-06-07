@@ -23,7 +23,7 @@ import {
 const NAME_MAX = 32;
 const MSG_MAX = 280;
 const PAGE_SIZE = 7; // messages per page
-const COOLDOWN_MS = 1000; // currently 1s for testing (was 24 * 60 * 60 * 1000)
+const COOLDOWN_MS = 24 * 60 * 60 * 1000; // currently 1s for testing (was 24 * 60 * 60 * 1000)
 const MIN_FILL_MS = 2500; // submitted faster than this == almost certainly a bot
 // Owner mode: set this in the browser console to reveal delete + like controls:
 //   localStorage.setItem('vx-gb-admin', 'YOUR_SUPABASE_SERVICE_ROLE_KEY')
