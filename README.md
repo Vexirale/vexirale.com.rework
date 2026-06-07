@@ -103,10 +103,11 @@ your own:
    alter table guestbook add column if not exists liked boolean not null default false;
    ```
 
-5. **Anti-spam.** The site already blocks bots client-side (a hidden honeypot
-   field, an instant-submit time trap, and a 24h-per-device cooldown). For a
-   real **per-IP** 24h limit enforced server-side, run this once in the SQL
-   editor (stores only a salted hash of the IP, never the IP itself):
+5. **Anti-spam + IP bans.** The site already blocks bots client-side (a hidden
+   honeypot field, an instant-submit time trap, and a 24h-per-device cooldown).
+   For a real **per-IP** 24h limit **and an IP ban list** enforced server-side,
+   run this once in the SQL editor (stores only a salted hash of the IP for the
+   rate limit; ban entries are owner-only):
 
    ```sql
    create extension if not exists pgcrypto with schema extensions;
@@ -114,16 +115,33 @@ your own:
    -- never expose the hash to the public anon role:
    revoke select (ip_hash) on guestbook from anon;
 
+   -- IP ban list (only the service_role key / you can read or edit it):
+   create table if not exists banned_ips (
+     ip text primary key,
+     reason text,
+     created_at timestamptz not null default now()
+   );
+   alter table banned_ips enable row level security;
+
    create or replace function guestbook_ratelimit()
    returns trigger language plpgsql security definer as $$
    declare
-     ip text;
+     client_ip text;
    begin
-     ip := split_part(
-       coalesce(current_setting('request.headers', true)::json ->> 'x-forwarded-for', ''),
-       ',', 1);
+     client_ip := nullif(split_part(coalesce(
+       current_setting('request.headers', true)::json ->> 'x-real-ip',
+       current_setting('request.headers', true)::json ->> 'x-forwarded-for',
+       ''), ',', 1), '');
+
+     -- blocked IPs can't post
+     if client_ip is not null
+        and exists (select 1 from banned_ips b where b.ip = client_ip) then
+       raise exception 'You have been banned from the guestbook.';
+     end if;
+
+     -- 1 message per IP per 24h
      new.ip_hash := encode(
-       extensions.digest('vexirale-salt:' || coalesce(ip, ''), 'sha256'), 'hex');
+       extensions.digest('vexirale-salt:' || coalesce(client_ip, ''), 'sha256'), 'hex');
      if exists (
        select 1 from guestbook
        where ip_hash = new.ip_hash and created_at > now() - interval '24 hours'
@@ -140,9 +158,18 @@ your own:
      for each row execute function guestbook_ratelimit();
    ```
 
-   Change `'vexirale-salt:'` to your own secret string. The exception message is
+   Change `'vexirale-salt:'` to your own secret string. Exception messages are
    shown to the visitor by the form. (Without this, the 24h limit is per-device
    only and can be bypassed by clearing storage.)
+
+   **To ban an IP** (find it in the Supabase request logs, e.g. `x_real_ip`):
+
+   ```sql
+   insert into banned_ips (ip, reason) values ('1.2.3.4', 'why')
+     on conflict (ip) do nothing;
+   ```
+
+   To unban: `delete from banned_ips where ip = '1.2.3.4';`
 
 Leave `supabaseUrl` / `supabaseAnonKey` blank to keep the guestbook hidden
 ("coming soon") until you're ready.
