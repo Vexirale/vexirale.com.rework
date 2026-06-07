@@ -66,40 +66,43 @@ export function PresencePanel({
         {/* Bio rotation */}
         <BioRotator lines={siteConfig.bioLines} visitors={visitors} />
 
-        {/* Socials (wrap onto a 2nd row as needed) on the left; on the right the
-            catgirl visit counter stacked on top of the clock widget. */}
-        <div className="flex flex-wrap items-start gap-3">
-          <div className="min-w-0 flex-1">
-            <SocialLinks socials={siteConfig.socials} />
+        {/* Socials (wrap onto a 2nd row as needed). */}
+        <SocialLinks socials={siteConfig.socials} />
+
+        {/* Live activity (left) next to the visitor counter + clock (right).
+            On desktop they sit side by side; on mobile they stack. */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
+          <div className="order-last min-w-0 flex-1 sm:order-none">
+            {loading ? (
+              <Skeleton className="h-[88px] w-full rounded-2xl" />
+            ) : (
+              <AnimatePresence mode="wait" initial={false}>
+                {featured && (
+                  <motion.div
+                    key={
+                      featured.kind + ("title" in featured ? featured.title : "")
+                    }
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
+                    className="overflow-hidden"
+                  >
+                    <ActivityCard
+                      activity={featured}
+                      tint={rgbToRgba(accent, 0.14)}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            )}
           </div>
-          <div className="flex w-full flex-col items-end gap-2 sm:w-auto">
+
+          <div className="flex flex-col items-end gap-2 self-end sm:shrink-0 sm:self-auto">
             <CatgirlCounter />
             <TimeIndicator />
           </div>
         </div>
-
-        {/* Live activity card — collapses cleanly when idle. */}
-        {loading ? (
-          <Skeleton className="h-[88px] w-full rounded-2xl" />
-        ) : (
-          <AnimatePresence mode="wait" initial={false}>
-            {featured && (
-              <motion.div
-                key={featured.kind + ("title" in featured ? featured.title : "")}
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
-                className="overflow-hidden"
-              >
-                <ActivityCard
-                  activity={featured}
-                  tint={rgbToRgba(accent, 0.14)}
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        )}
       </div>
     </GlassPanel>
   );

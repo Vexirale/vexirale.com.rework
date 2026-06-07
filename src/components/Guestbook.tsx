@@ -155,7 +155,9 @@ export function Guestbook() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               maxLength={NAME_MAX}
-              placeholder="Your name"
+              required
+              aria-label="Your name"
+              placeholder="Your name (required)"
               className="w-full rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/30 focus:outline-none"
             />
             <textarea
@@ -163,6 +165,8 @@ export function Guestbook() {
               onChange={(e) => setMessage(e.target.value)}
               maxLength={MSG_MAX}
               rows={3}
+              required
+              aria-label="Your message"
               placeholder="Leave a message…"
               className="w-full resize-none rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/30 focus:outline-none"
             />
