@@ -8,7 +8,7 @@ import { GlassPanel } from "./GlassPanel";
 import { Avatar } from "./Avatar";
 import { StatusDot } from "./StatusDot";
 import { StatusBubble } from "./StatusBubble";
-import { CatgirlWidget } from "./CatgirlWidget";
+import { CatgirlCounter } from "./CatgirlCounter";
 import { TimeIndicator } from "./TimeIndicator";
 import { BioRotator } from "./BioRotator";
 import { SocialLinks } from "./SocialLinks";
@@ -57,12 +57,12 @@ export function PresencePanel({
             </div>
           </div>
 
-          {/* Right column: custom-status thought bubble + rotating catgirl. */}
+          {/* Right column: custom-status thought bubble + catgirl visit counter. */}
           <div className="flex shrink-0 flex-col items-end gap-3">
             <AnimatePresence>
               {customStatus && <StatusBubble status={customStatus} />}
             </AnimatePresence>
-            <CatgirlWidget />
+            <CatgirlCounter />
           </div>
         </div>
 
