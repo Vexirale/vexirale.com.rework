@@ -27,7 +27,7 @@ export function Landing({ onEnter }: { onEnter: () => void }) {
       { text: "> waking the catgirl...", tail: "ok" },
       { text: "> checking guestbook...", tail: "ok" },
       { text: "> all systems ready" },
-      { text: "> waiting for input", cmd: true },
+      { text: "! waiting for input", cmd: true },
     ];
   }, []);
 
