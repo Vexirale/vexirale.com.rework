@@ -32,9 +32,9 @@ export function TimeIndicator() {
   const visitor = formatIn(now);
 
   return (
-    <div className="flex shrink-0 items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3">
+    <div className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 sm:w-auto">
       <Clock className="h-9 w-9 shrink-0 text-white/55" strokeWidth={1.25} />
-      <div className="flex flex-col">
+      <div className="flex flex-1 flex-col">
         <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-white/40">
           {siteConfig.timezoneLabel} time · for me
         </span>
@@ -42,8 +42,8 @@ export function TimeIndicator() {
           {owner}
         </span>
         <span className="my-1 h-px w-full bg-white/10" />
-        <span className="font-mono text-[11px] tabular-nums text-white/50">
-          your time:{" "}
+        <span className="flex items-center justify-between gap-2 font-mono text-[11px] tabular-nums text-white/50">
+          <span>your time:</span>
           <span className="text-white/75">{visitor}</span>
         </span>
       </div>
