@@ -6,7 +6,12 @@ import { siteConfig } from "../config";
  * in the owner's browser localStorage and is never committed. */
 
 const gb = siteConfig.guestbook;
-const BASE_URL = gb.supabaseUrl.replace(/\/+$/, ""); // tolerate a trailing slash
+// Use just the project origin: tolerate a trailing slash and a pasted
+// "/rest/v1" suffix (which would otherwise double up to /rest/v1/rest/v1 → 404).
+const BASE_URL = gb.supabaseUrl
+  .trim()
+  .replace(/\/+$/, "")
+  .replace(/\/rest\/v1$/, "");
 
 export interface GuestEntry {
   id: number | string;

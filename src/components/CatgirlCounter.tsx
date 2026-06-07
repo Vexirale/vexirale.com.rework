@@ -10,9 +10,10 @@ export function CatgirlCounter() {
 
   if (!c.enabled || !c.name || failed) return null;
 
+  // padding=1 → no leading zeros (show the real number only).
   const src = `https://count.getloli.com/get/@${encodeURIComponent(
     c.name,
-  )}?theme=${encodeURIComponent(c.theme)}`;
+  )}?theme=${encodeURIComponent(c.theme)}&padding=1`;
 
   return (
     <div className="flex flex-col items-end gap-1">

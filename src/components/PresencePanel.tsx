@@ -57,25 +57,23 @@ export function PresencePanel({
             </div>
           </div>
 
-          {/* Right column: custom-status thought bubble + catgirl visit counter. */}
-          <div className="flex shrink-0 flex-col items-end gap-3">
-            <AnimatePresence>
-              {customStatus && <StatusBubble status={customStatus} />}
-            </AnimatePresence>
-            <CatgirlCounter />
-          </div>
+          {/* Live Discord custom status message (thought bubble). */}
+          <AnimatePresence>
+            {customStatus && <StatusBubble status={customStatus} />}
+          </AnimatePresence>
         </div>
 
         {/* Bio rotation */}
         <BioRotator lines={siteConfig.bioLines} visitors={visitors} />
 
-        {/* Socials (wrap onto a 2nd row as needed) + clock widget on the right
-            (full width on mobile). */}
+        {/* Socials (wrap onto a 2nd row as needed) on the left; on the right the
+            catgirl visit counter stacked on top of the clock widget. */}
         <div className="flex flex-wrap items-start gap-3">
           <div className="min-w-0 flex-1">
             <SocialLinks socials={siteConfig.socials} />
           </div>
-          <div className="w-full sm:w-auto">
+          <div className="flex w-full flex-col items-end gap-2 sm:w-auto">
+            <CatgirlCounter />
             <TimeIndicator />
           </div>
         </div>
