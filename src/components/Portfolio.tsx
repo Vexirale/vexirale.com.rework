@@ -7,6 +7,7 @@ import type { Rgb } from "../lib/color";
 import { PresencePanel } from "./PresencePanel";
 import { ProjectPanel } from "./ProjectPanel";
 import { NotepadModal } from "./NotepadModal";
+import { Guestbook } from "./Guestbook";
 
 interface PortfolioProps {
   data: LanyardData | null;
@@ -72,6 +73,11 @@ export function Portfolio({ data, loading, featured, accent }: PortfolioProps) {
             ))}
           </div>
         )}
+
+        {/* Guestbook */}
+        <motion.div variants={item} className="mt-6 sm:mt-8">
+          <Guestbook />
+        </motion.div>
       </motion.div>
 
       {/* Focused notepad modal for "note" projects (blurs the background). */}

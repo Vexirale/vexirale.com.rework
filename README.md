@@ -51,8 +51,43 @@ config beyond the Discord ID.
 
 Particle count and opacity are constants at the top of
 [`src/components/Particles.tsx`](src/components/Particles.tsx) — lower them (or
-set `COUNT` to `0`) if the background ever feels busy. Background blob colors
-live in [`src/components/Background.tsx`](src/components/Background.tsx).
+set `COUNT` to `0`) if the background ever feels busy. Blob colors are pulled
+from the current song's album art (neutral white/grey when nothing is playing);
+the neutral palette + motion live in
+[`src/components/Background.tsx`](src/components/Background.tsx).
+
+### Guestbook (Supabase — one-time setup)
+
+The guestbook needs a tiny free backend. Supabase gives one with no server of
+your own:
+
+1. Create a free project at [supabase.com](https://supabase.com).
+2. In **SQL Editor**, run:
+
+   ```sql
+   create table guestbook (
+     id bigint generated always as identity primary key,
+     name text not null check (char_length(name) between 1 and 32),
+     message text not null check (char_length(message) between 1 and 280),
+     created_at timestamptz not null default now()
+   );
+   alter table guestbook enable row level security;
+   -- anyone may read and sign…
+   create policy "read"   on guestbook for select using (true);
+   create policy "sign"   on guestbook for insert with check (true);
+   -- …but only the service_role key (you) can delete (no delete policy = denied).
+   ```
+
+3. In **Project Settings → API**, copy the **Project URL** and the **anon**
+   public key into `guestbook` in [`src/config.ts`](src/config.ts). The anon key
+   is safe to commit — row-level security limits it to read/insert.
+4. **Deleting messages:** on the live site, click the 🔒 on the guestbook panel
+   and paste your **service_role** key (also under Project Settings → API). It's
+   stored only in your browser (localStorage), never in the repo, and unlocks
+   the delete buttons. Click the 🔓 again to exit owner mode.
+
+Leave `supabaseUrl` / `supabaseAnonKey` blank to keep the guestbook hidden
+("coming soon") until you're ready.
 
 ## Deployment (GitHub Pages, custom domain vexirale.com)
 
