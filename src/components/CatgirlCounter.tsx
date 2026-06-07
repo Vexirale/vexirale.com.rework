@@ -18,7 +18,7 @@ export function CatgirlCounter() {
   return (
     <div className="flex flex-col items-end gap-1">
       <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-white/40">
-        total visitors
+        total views
       </span>
       <img
         src={src}
