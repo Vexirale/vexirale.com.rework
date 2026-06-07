@@ -34,7 +34,7 @@ export function PresencePanel({
 
   return (
     <GlassPanel accent={accent} className="p-6 sm:p-8">
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-4 sm:gap-5">
         {/* Header: avatar + name + status dot on the left, custom-status
             thought-bubble on the right (shown only when one is set). */}
         <div className="flex items-start gap-4 sm:gap-5">
@@ -71,7 +71,7 @@ export function PresencePanel({
 
         {/* Visit counter (top-right), then the listening card + clock as an
             aligned, equal-height pair on desktop (they stack on mobile). */}
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-2">
           <div className="flex justify-end">
             <CatgirlCounter />
           </div>

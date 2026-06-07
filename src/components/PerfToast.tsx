@@ -17,10 +17,10 @@ export function PerfToast() {
       {show && (
         <motion.div
           role="status"
-          className="glass fixed left-1/2 top-4 z-50 w-[min(92vw,26rem)] -translate-x-1/2 rounded-2xl p-4 pr-10"
-          initial={reduced ? { opacity: 0 } : { opacity: 0, y: -24 }}
+          className="glass fixed bottom-4 left-4 z-50 w-[min(92vw,24rem)] rounded-2xl p-4 pr-10"
+          initial={reduced ? { opacity: 0 } : { opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={reduced ? { opacity: 0 } : { opacity: 0, y: -24 }}
+          exit={reduced ? { opacity: 0 } : { opacity: 0, y: 24 }}
           transition={{ type: "spring", stiffness: 260, damping: 24 }}
         >
           <button
