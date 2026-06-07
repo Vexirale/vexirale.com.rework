@@ -149,7 +149,7 @@ export function Landing({ onEnter }: { onEnter: () => void }) {
 
         {/* Footer */}
         <div className="border-t border-white/10 px-5 py-2.5 font-mono text-[10px] uppercase tracking-[0.18em] text-white/25 sm:px-6">
-          {siteConfig.name} · runs once per hour · {new Date().getFullYear()}
+          {siteConfig.name} · console · {new Date().getFullYear()}
         </div>
       </div>
     </motion.div>
