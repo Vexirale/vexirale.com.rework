@@ -105,7 +105,7 @@ export function Guestbook() {
     }
     const last = Number(ls(LAST_KEY) || 0);
     if (Date.now() - last < COOLDOWN_MS) {
-      setFormError("You can sign once a day — come back tomorrow! 💤");
+      setFormError("caallmmm downnnn, come back tomorrow‼️‼️");
       return;
     }
 
@@ -163,13 +163,12 @@ export function Guestbook() {
 
       {!configured ? (
         <p className="py-6 text-center text-sm text-white/40">
-          ✨ Guestbook coming soon
+          oopsie something went wrong and aaalll the messages are  goneee
         </p>
       ) : (
         <>
           {/* Sign form */}
           <form onSubmit={submit} className="mb-6 flex flex-col gap-3">
-            {/* Honeypot — hidden from humans; bots fill it and get rejected. */}
             <input
               type="text"
               name="website"
@@ -226,11 +225,11 @@ export function Guestbook() {
             </div>
           ) : loadError ? (
             <p className="py-4 text-center text-sm text-white/40">
-              Couldn't load the guestbook right now.
+              OOPSIE WOOPSIE!! Uwu We made a fucky wucky!! A wittle fucko boingo! The code monkeys at our headquarters are working VEWY HAWD to fix this!
             </p>
           ) : entries.length === 0 ? (
             <p className="py-4 text-center text-sm text-white/40">
-              No messages yet — be the first to sign! ✍️
+              No messages yet be the first to sign! ✍️
             </p>
           ) : (
             <ul className="flex flex-col gap-3">
