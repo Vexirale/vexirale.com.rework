@@ -81,9 +81,10 @@ your own:
    --  the service_role key bypasses RLS).
    ```
 
-3. In **Project Settings → API**, copy the **Project URL** and the **anon**
-   public key into `guestbook` in [`src/config.ts`](src/config.ts). The anon key
-   is safe to commit — row-level security limits it to read/insert.
+3. In **Project Settings → API**, copy the **Project URL** (the bare
+   `https://xxxx.supabase.co` — no `/rest/v1`) and the **anon** public key into
+   `guestbook` in [`src/config.ts`](src/config.ts). The anon key is safe to
+   commit — row-level security limits it to read/insert.
 4. **Owner controls (delete / like).** There's no on-page lock — enable owner
    mode from the browser **console** on the live site:
 
