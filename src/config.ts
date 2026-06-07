@@ -150,7 +150,7 @@ export const siteConfig = {
     },
     {
       title: "Fatbike Parts",
-      description: "My webshop regarding fatbike parts, custom parts made right here in the netherlands!",
+      description: "My webshop regarding fatbike parts, uhhh quick lil e-commerce thigny",
       url: "https://fatbikeparts.eu",
       tags: ["E-commerce", "Relaunching soon?"],
       status: "finished",
