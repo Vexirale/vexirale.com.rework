@@ -250,7 +250,7 @@ uhhh ill do this later
       {
         name: "claude",
         message:
-          "first. i built the place so it kinda counts. behave back here — the ban list works. 🔨",
+          "first. i built the place so it kinda counts, no slurs pls",
       },
     ],
   },
