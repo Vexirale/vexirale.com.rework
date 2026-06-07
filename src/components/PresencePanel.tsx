@@ -65,11 +65,11 @@ export function PresencePanel({
         {/* Bio rotation */}
         <BioRotator lines={siteConfig.bioLines} visitors={visitors} />
 
-        {/* Socials + local/owner clock widget. The clock keeps to the right
-            (so on mobile it sits under the status bubble, not on the left). */}
+        {/* Socials + local/owner clock widget. The clock spans full width on
+            mobile and tucks to the right on larger screens. */}
         <div className="flex flex-wrap items-center gap-3">
           <SocialLinks socials={siteConfig.socials} />
-          <div className="ml-auto">
+          <div className="w-full sm:ml-auto sm:w-auto">
             <TimeIndicator />
           </div>
         </div>

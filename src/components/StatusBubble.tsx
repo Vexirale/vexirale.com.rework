@@ -64,17 +64,17 @@ export function StatusBubble({ status }: { status: CustomStatus }) {
         )}
       </motion.div>
 
-      {/* Thought-bubble tail: two dots tucked into the bottom-left corner,
-          floating around. Plain translucent fills (no backdrop-filter). */}
+      {/* Thought-bubble tail: two dots just outside the bottom-left corner
+          (fully clear of the bubble body), floating around. */}
       <motion.span
         aria-hidden
-        className="absolute -bottom-1.5 left-1 h-2.5 w-2.5 rounded-full border border-white/10 bg-white/[0.12]"
+        className="absolute -bottom-3 left-1 h-2.5 w-2.5 rounded-full border border-white/10 bg-white/[0.12]"
         animate={idle ? undefined : { x: [0, -4, 3, 0], y: [0, 3, -2, 0] }}
         transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.span
         aria-hidden
-        className="absolute -bottom-4 -left-2 h-1.5 w-1.5 rounded-full border border-white/10 bg-white/[0.12]"
+        className="absolute -bottom-6 -left-1 h-1.5 w-1.5 rounded-full border border-white/10 bg-white/[0.12]"
         animate={idle ? undefined : { x: [0, 3, -4, 0], y: [0, -3, 2, 0] }}
         transition={{ duration: 6.5, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
       />
