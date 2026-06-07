@@ -8,6 +8,7 @@ import { selectFeaturedActivity } from "./lib/activity";
 import { Background } from "./components/Background";
 import { Landing } from "./components/Landing";
 import { Portfolio } from "./components/Portfolio";
+import { PerfToast } from "./components/PerfToast";
 
 export default function App() {
   const [entered, setEntered] = useState(false);
@@ -36,6 +37,7 @@ export default function App() {
   return (
     <>
       <Background albumArt={albumArt} />
+      <PerfToast />
 
       <AnimatePresence mode="wait">
         {entered ? (
