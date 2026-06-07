@@ -37,15 +37,15 @@ export function PerfToast() {
             <h3 className="text-sm font-semibold">Performance mode on</h3>
           </div>
           <p className="mt-1.5 text-sm leading-relaxed text-white/70">
-            Your frame rate dipped, so I eased off the heavier visuals to keep
-            things smooth. 🧈
+            im crinneee ur device cant run this BEAUTIFUL motherfuckingwebsite.com 
+            its okay tho, i slowed some things down so you can still experience some of it :)
           </p>
           <button
             type="button"
             onClick={enableFullExperience}
             className="mt-2 text-sm font-medium text-amber-300 underline decoration-amber-300/40 underline-offset-2 transition-colors hover:decoration-amber-300"
           >
-            Run the full experience anyway (may stutter)
+            No, I want to LAG. give me the full experience!
           </button>
         </motion.div>
       )}
