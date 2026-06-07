@@ -245,6 +245,16 @@ uhhh ill do this later
       url: "https://open.spotify.com/user/31taplaaukndq5ekom33j4hhc6dy",
       icon: "si:spotify",
     },
+    {
+      label: "Instagram",
+      url: "https://www.instagram.com/vexirailed",
+      icon: "si:instagram",
+    },
+    {
+      label: "Youtube",
+      url: "https://www.youtube.com/channel/UC7jTGf8LI-4R4u1VsFwW_1A",
+      icon: "si:youtube",
+    },
     // add or remove here...
   ] as Social[],
 
