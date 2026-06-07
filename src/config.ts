@@ -99,6 +99,10 @@ export const siteConfig = {
   timezone: "Europe/Amsterdam",
   timezoneLabel: "AMS",
 
+  // A little decorative rotating catgirl image in the header (via nekos.best).
+  // Set enabled to false to remove it.
+  catgirl: { enabled: true },
+
   // Weekly visitor counter (uses the free Abacus API; no backend needed). Each
   // ISO week gets its own counter, so it shows "visitors this week". Put the
   // {visitors} token in any bio line to display it (see bioLines below).

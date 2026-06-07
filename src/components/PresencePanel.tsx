@@ -8,6 +8,7 @@ import { GlassPanel } from "./GlassPanel";
 import { Avatar } from "./Avatar";
 import { StatusDot } from "./StatusDot";
 import { StatusBubble } from "./StatusBubble";
+import { CatgirlWidget } from "./CatgirlWidget";
 import { TimeIndicator } from "./TimeIndicator";
 import { BioRotator } from "./BioRotator";
 import { SocialLinks } from "./SocialLinks";
@@ -56,20 +57,25 @@ export function PresencePanel({
             </div>
           </div>
 
-          {/* Live Discord custom status message (thought bubble). */}
-          <AnimatePresence>
-            {customStatus && <StatusBubble status={customStatus} />}
-          </AnimatePresence>
+          {/* Right column: custom-status thought bubble + rotating catgirl. */}
+          <div className="flex shrink-0 flex-col items-end gap-3">
+            <AnimatePresence>
+              {customStatus && <StatusBubble status={customStatus} />}
+            </AnimatePresence>
+            <CatgirlWidget />
+          </div>
         </div>
 
         {/* Bio rotation */}
         <BioRotator lines={siteConfig.bioLines} visitors={visitors} />
 
-        {/* Socials + local/owner clock widget. The clock spans full width on
-            mobile and tucks to the right on larger screens. */}
-        <div className="flex flex-wrap items-center gap-3">
-          <SocialLinks socials={siteConfig.socials} />
-          <div className="w-full sm:ml-auto sm:w-auto">
+        {/* Socials (wrap onto a 2nd row as needed) + clock widget on the right
+            (full width on mobile). */}
+        <div className="flex flex-wrap items-start gap-3">
+          <div className="min-w-0 flex-1">
+            <SocialLinks socials={siteConfig.socials} />
+          </div>
+          <div className="w-full sm:w-auto">
             <TimeIndicator />
           </div>
         </div>
