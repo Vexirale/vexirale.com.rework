@@ -51,8 +51,12 @@ async function fail(res: Response, action: string): Promise<never> {
 
 /** Most recent entries first. */
 export async function fetchEntries(limit = 200): Promise<GuestEntry[]> {
+  // Explicit columns only (never expose the server-side ip_hash used for the
+  // per-IP rate limit).
   const res = await fetch(
-    endpoint(`?select=*&order=created_at.desc&limit=${limit}`),
+    endpoint(
+      `?select=id,name,message,liked,created_at&order=created_at.desc&limit=${limit}`,
+    ),
     { headers: headers(gb.supabaseAnonKey) },
   );
   if (!res.ok) return fail(res, "Load");

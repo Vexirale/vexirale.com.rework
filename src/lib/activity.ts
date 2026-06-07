@@ -96,7 +96,8 @@ export function resolveAssetImage(
 
 function streamHref(activity: Activity): string | null {
   if (activity.type === ACTIVITY_TYPE.STREAMING && activity.url) {
-    return activity.url;
+    // Only allow http(s) links (guards against javascript:/data: in a link).
+    return /^https?:\/\//i.test(activity.url) ? activity.url : null;
   }
   return null;
 }
