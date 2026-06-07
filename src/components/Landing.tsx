@@ -10,17 +10,23 @@ export function Landing({ onEnter }: { onEnter: () => void }) {
   const reduced = useReducedMotion();
 
   const lines = useMemo<Line[]>(() => {
-    const attempts = (300_000 + Math.floor(Math.random() * 99_999)).toLocaleString();
+    const modules = 200 + Math.floor(Math.random() * 700);
     return [
       { text: "$ ssh guest@vexirale.com", cmd: true },
-      { text: "> initializing..." },
-      { text: "> probing environment...", tail: "ok" },
-      { text: "> fetching challenge...", tail: "ok" },
-      { text: "$ cd /var/www/vexirale", cmd: true },
-      { text: "> resolving assets...", tail: "ok" },
-      { text: `> proof found after ${attempts} attempts`, tail: "ok" },
-      { text: "> verifying signature...", tail: "ok" },
-      { text: "> handshake established", tail: "ok" },
+      { text: "> establishing tunnel...", tail: "ok" },
+      { text: "$ whoami", cmd: true },
+      { text: "> guest (read only)" },
+      { text: "$ cd /home/vexirale", cmd: true },
+      { text: "> mounting filesystem...", tail: "ok" },
+      { text: "> loading profile.json...", tail: "ok" },
+      { text: "> syncing discord presence...", tail: "ok" },
+      { text: "> pinging spotify...", tail: "ok" },
+      { text: "$ ./boot --portfolio", cmd: true },
+      { text: `> hydrated ${modules} components...`, tail: "ok" },
+      { text: "> warming the aurora...", tail: "ok" },
+      { text: "> waking the catgirls...", tail: "ok" },
+      { text: "> checking guestbook...", tail: "ok" },
+      { text: "> all systems nominal" },
     ];
   }, []);
 
@@ -37,7 +43,7 @@ export function Landing({ onEnter }: { onEnter: () => void }) {
       setPhase("ready");
       return;
     }
-    const id = setTimeout(() => setCount((c) => c + 1), 360);
+    const id = setTimeout(() => setCount((c) => c + 1), 280);
     return () => clearTimeout(id);
   }, [phase, count, lines.length]);
 
@@ -116,8 +122,8 @@ export function Landing({ onEnter }: { onEnter: () => void }) {
               className="mt-4 text-white/80"
             >
               <span className="animate-pulse">
-                [ press <span className="text-white">enter</span> — or click
-                anywhere — to access ]
+                [ press <span className="text-white">enter</span> or click
+                anywhere to access ]
               </span>
               <span className="ml-1 inline-block w-2 animate-pulse text-white/70">
                 ▋
