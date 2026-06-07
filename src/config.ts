@@ -245,6 +245,14 @@ uhhh ill do this later
     supabaseUrl: "https://ojudkxckmupbbysvsjwr.supabase.co/rest/v1/", // e.g. "https://abcd1234.supabase.co"
     supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qdWRreGNrbXVwYmJ5c3ZzandyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4MjYxODksImV4cCI6MjA5NjQwMjE4OX0.SxrWG64pBoJSIcQFQj5ZfLaNWSq9QHJbZRstE4f8xi0", // public anon/publishable key
     table: "guestbook",
+    // Always-on entries pinned to the top (live here, not in the DB).
+    pinned: [
+      {
+        name: "claude",
+        message:
+          "first. i built the place so it kinda counts. behave back here — the ban list works. 🔨",
+      },
+    ],
   },
 };
 
