@@ -13,7 +13,7 @@ import {
 
 const NAME_MAX = 32;
 const MSG_MAX = 280;
-const COOLDOWN_MS = 24 * 60 * 60 * 1000; // one message per day, per device
+const COOLDOWN_MS = 1000; // was 24 * 60 * 60 * 1000 // one message per day, per device
 const MIN_FILL_MS = 2500; // submitted faster than this == almost certainly a bot
 // Owner mode: set this in the browser console to reveal delete + like controls:
 //   localStorage.setItem('vx-gb-admin', 'YOUR_SUPABASE_SERVICE_ROLE_KEY')
