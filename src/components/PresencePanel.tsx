@@ -69,38 +69,44 @@ export function PresencePanel({
         {/* Socials (wrap onto a 2nd row as needed). */}
         <SocialLinks socials={siteConfig.socials} />
 
-        {/* Live activity (left) next to the visitor counter + clock (right).
-            On desktop they sit side by side; on mobile they stack. */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
-          <div className="order-last min-w-0 flex-1 sm:order-none">
-            {loading ? (
-              <Skeleton className="h-[88px] w-full rounded-2xl" />
-            ) : (
-              <AnimatePresence mode="wait" initial={false}>
-                {featured && (
-                  <motion.div
-                    key={
-                      featured.kind + ("title" in featured ? featured.title : "")
-                    }
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.3, ease: "easeOut" }}
-                    className="overflow-hidden"
-                  >
-                    <ActivityCard
-                      activity={featured}
-                      tint={rgbToRgba(accent, 0.14)}
-                    />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            )}
+        {/* Visit counter (top-right), then the listening card + clock as an
+            aligned, equal-height pair on desktop (they stack on mobile). */}
+        <div className="flex flex-col gap-3">
+          <div className="flex justify-end">
+            <CatgirlCounter />
           </div>
 
-          <div className="flex flex-col items-end gap-2 self-end sm:shrink-0 sm:self-auto">
-            <CatgirlCounter />
-            <TimeIndicator />
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch sm:gap-4">
+            <div className="order-last min-w-0 flex-1 sm:order-none">
+              {loading ? (
+                <Skeleton className="h-full min-h-[88px] w-full rounded-2xl" />
+              ) : (
+                <AnimatePresence mode="wait" initial={false}>
+                  {featured && (
+                    <motion.div
+                      key={
+                        featured.kind +
+                        ("title" in featured ? featured.title : "")
+                      }
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.3, ease: "easeOut" }}
+                      className="h-full overflow-hidden"
+                    >
+                      <ActivityCard
+                        activity={featured}
+                        tint={rgbToRgba(accent, 0.14)}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              )}
+            </div>
+
+            <div className="self-end sm:shrink-0 sm:self-auto">
+              <TimeIndicator />
+            </div>
           </div>
         </div>
       </div>
