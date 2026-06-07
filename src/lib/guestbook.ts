@@ -37,7 +37,8 @@ function headers(authKey: string): Record<string, string> {
   };
 }
 
-/** Surface the real PostgREST error so setup problems are diagnosable. */
+/** Surface the real PostgREST error so setup problems are diagnosable, and so
+ *  our ban / rate-limit trigger messages reach the visitor verbatim. */
 async function fail(res: Response, action: string): Promise<never> {
   let detail = "";
   try {
@@ -46,7 +47,9 @@ async function fail(res: Response, action: string): Promise<never> {
   } catch {
     /* ignore */
   }
-  throw new Error(`${action} failed (${res.status})${detail ? `: ${detail}` : ""}`);
+  // Prefer the server's human message (e.g. "You have been banned…"); fall back
+  // to a generic one with the status for opaque failures.
+  throw new Error(detail || `${action} failed (${res.status})`);
 }
 
 /** Most recent entries first. */
