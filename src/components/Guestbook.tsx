@@ -1,17 +1,22 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { BookOpen, Loader2, Lock, LockOpen, Send, Trash2 } from "lucide-react";
+import { BookOpen, Heart, Loader2, Send, Trash2 } from "lucide-react";
+import { siteConfig } from "../config";
 import {
   addEntry,
   deleteEntry,
   fetchEntries,
   guestbookConfigured,
+  setLiked,
   type GuestEntry,
 } from "../lib/guestbook";
 
 const NAME_MAX = 32;
 const MSG_MAX = 280;
 const COOLDOWN_MS = 30_000;
+// Owner mode: set this in the browser console to reveal delete + like controls:
+//   localStorage.setItem('vx-gb-admin', 'YOUR_SUPABASE_SERVICE_ROLE_KEY')
+// then reload. Remove it with localStorage.removeItem('vx-gb-admin').
 const ADMIN_KEY = "vx-gb-admin";
 const NAME_KEY = "vx-gb-name";
 const LAST_KEY = "vx-gb-last";
@@ -51,7 +56,9 @@ export function Guestbook() {
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
 
-  const [adminKey, setAdminKey] = useState(() => ls(ADMIN_KEY));
+  // Owner mode is enabled purely via the console (no UI lock).
+  const admin = ls(ADMIN_KEY);
+  const isOwner = Boolean(admin);
   const mounted = useRef(true);
 
   useEffect(() => {
@@ -95,32 +102,11 @@ export function Guestbook() {
       } catch {
         /* ignore */
       }
-    } catch {
-      setFormError("Couldn't post that — please try again.");
+    } catch (err) {
+      // Surface the real reason (most often a missing row-level-security policy).
+      setFormError(err instanceof Error ? err.message : "Couldn't post that.");
     } finally {
       if (mounted.current) setSubmitting(false);
-    }
-  };
-
-  const toggleAdmin = () => {
-    if (adminKey) {
-      setAdminKey("");
-      try {
-        localStorage.removeItem(ADMIN_KEY);
-      } catch {
-        /* ignore */
-      }
-      return;
-    }
-    const key = window.prompt(
-      "Owner only — paste your Supabase service_role key to enable deleting:",
-    );
-    if (!key) return;
-    setAdminKey(key.trim());
-    try {
-      localStorage.setItem(ADMIN_KEY, key.trim());
-    } catch {
-      /* ignore */
     }
   };
 
@@ -128,10 +114,25 @@ export function Guestbook() {
     const prev = entries;
     setEntries((e) => e.filter((x) => x.id !== id)); // optimistic
     try {
-      await deleteEntry(id, adminKey);
+      await deleteEntry(id, admin);
     } catch {
-      setEntries(prev); // restore on failure
+      setEntries(prev);
       window.alert("Delete failed — check your service_role key.");
+    }
+  };
+
+  const toggleLike = async (entry: GuestEntry) => {
+    const next = !entry.liked;
+    setEntries((e) =>
+      e.map((x) => (x.id === entry.id ? { ...x, liked: next } : x)),
+    ); // optimistic
+    try {
+      await setLiked(entry.id, next, admin);
+    } catch {
+      setEntries((e) =>
+        e.map((x) => (x.id === entry.id ? { ...x, liked: !next } : x)),
+      );
+      window.alert("Like failed — check your service_role key / DB column.");
     }
   };
 
@@ -140,19 +141,6 @@ export function Guestbook() {
       <div className="mb-5 flex items-center gap-2">
         <BookOpen className="h-5 w-5 text-white/60" />
         <h2 className="text-lg font-semibold text-white">Guestbook</h2>
-        <button
-          type="button"
-          onClick={toggleAdmin}
-          title={adminKey ? "Exit owner mode" : "Owner controls"}
-          aria-label={adminKey ? "Exit owner mode" : "Owner controls"}
-          className="ml-auto inline-flex h-7 w-7 items-center justify-center rounded-md text-white/30 transition-colors hover:bg-white/10 hover:text-white/70"
-        >
-          {adminKey ? (
-            <LockOpen className="h-3.5 w-3.5" />
-          ) : (
-            <Lock className="h-3.5 w-3.5" />
-          )}
-        </button>
       </div>
 
       {!configured ? (
@@ -195,9 +183,7 @@ export function Guestbook() {
                 Sign
               </button>
             </div>
-            {formError && (
-              <p className="text-xs text-red-300/80">{formError}</p>
-            )}
+            {formError && <p className="text-xs text-red-300/80">{formError}</p>}
           </form>
 
           {/* Entries */}
@@ -223,7 +209,7 @@ export function Guestbook() {
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, height: 0 }}
-                    className="group/entry rounded-xl border border-white/10 bg-white/[0.03] p-3"
+                    className="rounded-xl border border-white/10 bg-white/[0.03] p-3"
                   >
                     <div className="flex items-baseline gap-2">
                       <span className="text-sm font-semibold text-white">
@@ -232,20 +218,40 @@ export function Guestbook() {
                       <span className="font-mono text-[10px] text-white/30">
                         {relativeTime(entry.created_at)}
                       </span>
-                      {adminKey && (
-                        <button
-                          type="button"
-                          onClick={() => remove(entry.id)}
-                          aria-label="Delete entry"
-                          className="ml-auto inline-flex h-6 w-6 items-center justify-center rounded text-white/30 transition-colors hover:bg-red-500/15 hover:text-red-300"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
+                      {isOwner && (
+                        <span className="ml-auto flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => toggleLike(entry)}
+                            aria-label={entry.liked ? "Unlike" : "Like"}
+                            className="inline-flex h-6 w-6 items-center justify-center rounded text-white/30 transition-colors hover:bg-rose-500/15 hover:text-rose-300"
+                          >
+                            <Heart
+                              className="h-3.5 w-3.5"
+                              fill={entry.liked ? "currentColor" : "none"}
+                              style={entry.liked ? { color: "#fb7185" } : undefined}
+                            />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => remove(entry.id)}
+                            aria-label="Delete entry"
+                            className="inline-flex h-6 w-6 items-center justify-center rounded text-white/30 transition-colors hover:bg-red-500/15 hover:text-red-300"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </span>
                       )}
                     </div>
                     <p className="mt-1 whitespace-pre-wrap break-words text-sm text-white/70">
                       {entry.message}
                     </p>
+                    {entry.liked && (
+                      <p className="mt-1.5 flex items-center gap-1 text-[11px] font-medium text-rose-300">
+                        <Heart className="h-3 w-3" fill="currentColor" />
+                        liked by {siteConfig.name}
+                      </p>
+                    )}
                   </motion.li>
                 ))}
               </AnimatePresence>

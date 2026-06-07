@@ -228,9 +228,10 @@ uhhh ill do this later
   // Guestbook — visitors can leave a name + message. Backed by Supabase (free,
   // no server of your own). One-time setup is in the README ("Guestbook").
   // The anon key is SAFE to commit (it's public; row-level security limits it).
-  // To DELETE entries: open the site, click the lock on the guestbook panel and
-  // paste your Supabase service_role key (kept only in your browser, never in
-  // the repo). Leave url/anonKey blank to hide the guestbook until you set it up.
+  // To DELETE / LIKE entries: enable owner mode from the browser console with
+  //   localStorage.setItem('vx-gb-admin', '<service_role key>'); location.reload()
+  // (the key stays in your browser, never in the repo). Leave url/anonKey blank
+  // to hide the guestbook until you set it up.
   guestbook: {
     enabled: true,
     supabaseUrl: "https://ojudkxckmupbbysvsjwr.supabase.co/rest/v1/", // e.g. "https://abcd1234.supabase.co"

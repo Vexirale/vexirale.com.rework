@@ -69,22 +69,38 @@ your own:
      id bigint generated always as identity primary key,
      name text not null check (char_length(name) between 1 and 32),
      message text not null check (char_length(message) between 1 and 280),
+     liked boolean not null default false,
      created_at timestamptz not null default now()
    );
    alter table guestbook enable row level security;
    -- anyone may read and sign…
    create policy "read"   on guestbook for select using (true);
    create policy "sign"   on guestbook for insert with check (true);
-   -- …but only the service_role key (you) can delete (no delete policy = denied).
+   -- …but only the service_role key (you) can delete / like
+   -- (no update or delete policy = denied for the public anon key;
+   --  the service_role key bypasses RLS).
    ```
 
 3. In **Project Settings → API**, copy the **Project URL** and the **anon**
    public key into `guestbook` in [`src/config.ts`](src/config.ts). The anon key
    is safe to commit — row-level security limits it to read/insert.
-4. **Deleting messages:** on the live site, click the 🔒 on the guestbook panel
-   and paste your **service_role** key (also under Project Settings → API). It's
-   stored only in your browser (localStorage), never in the repo, and unlocks
-   the delete buttons. Click the 🔓 again to exit owner mode.
+4. **Owner controls (delete / like).** There's no on-page lock — enable owner
+   mode from the browser **console** on the live site:
+
+   ```js
+   localStorage.setItem("vx-gb-admin", "YOUR_SUPABASE_SERVICE_ROLE_KEY");
+   location.reload();
+   ```
+
+   (service_role key is under Project Settings → API). It's stored only in your
+   browser, never in the repo. Delete (🗑) and like (♥ → "liked by you") buttons
+   then appear on each entry. To exit: `localStorage.removeItem("vx-gb-admin")`.
+
+   _Already made the table before the like feature?_ Add the column:
+
+   ```sql
+   alter table guestbook add column if not exists liked boolean not null default false;
+   ```
 
 Leave `supabaseUrl` / `supabaseAnonKey` blank to keep the guestbook hidden
 ("coming soon") until you're ready.
