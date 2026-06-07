@@ -24,9 +24,10 @@ export function Landing({ onEnter }: { onEnter: () => void }) {
       { text: "$ ./boot --portfolio", cmd: true },
       { text: `> hydrated ${modules} components...`, tail: "ok" },
       { text: "> warming the aurora...", tail: "ok" },
-      { text: "> waking the catgirls...", tail: "ok" },
+      { text: "> waking the catgirl...", tail: "ok" },
       { text: "> checking guestbook...", tail: "ok" },
-      { text: "> all systems nominal" },
+      { text: "> all systems ready" },
+      { text: "> waiting for input", cmd: true },
     ];
   }, []);
 
