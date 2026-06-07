@@ -1,69 +1,150 @@
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { siteConfig } from "../config";
 
-/** Full-screen black landing view: name, tagline, and a glowing Enter button. */
+type Line = { text: string; tail?: string; cmd?: boolean };
+
+/** Terminal "checkpoint" boot sequence shown before the portfolio. It yaps a
+ *  few fake terminal steps, then waits for Enter / a click to "grant access". */
 export function Landing({ onEnter }: { onEnter: () => void }) {
   const reduced = useReducedMotion();
+
+  const lines = useMemo<Line[]>(() => {
+    const attempts = (300_000 + Math.floor(Math.random() * 99_999)).toLocaleString();
+    return [
+      { text: "$ ssh guest@vexirale.com", cmd: true },
+      { text: "> initializing..." },
+      { text: "> probing environment...", tail: "ok" },
+      { text: "> fetching challenge...", tail: "ok" },
+      { text: "$ cd /var/www/vexirale", cmd: true },
+      { text: "> resolving assets...", tail: "ok" },
+      { text: `> proof found after ${attempts} attempts`, tail: "ok" },
+      { text: "> verifying signature...", tail: "ok" },
+      { text: "> handshake established", tail: "ok" },
+    ];
+  }, []);
+
+  const [count, setCount] = useState(reduced ? lines.length : 0);
+  const [phase, setPhase] = useState<"run" | "ready" | "granted">(
+    reduced ? "ready" : "run",
+  );
+  const done = useRef(false);
+
+  // Reveal the lines one by one.
+  useEffect(() => {
+    if (phase !== "run") return;
+    if (count >= lines.length) {
+      setPhase("ready");
+      return;
+    }
+    const id = setTimeout(() => setCount((c) => c + 1), 360);
+    return () => clearTimeout(id);
+  }, [phase, count, lines.length]);
+
+  const activate = () => {
+    if (phase === "run") {
+      setCount(lines.length);
+      setPhase("ready");
+      return;
+    }
+    if (phase === "ready" && !done.current) {
+      done.current = true;
+      setPhase("granted");
+      setTimeout(onEnter, 850);
+    }
+  };
+
+  // Enter key advances/grants access too.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Enter") activate();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
 
   return (
     <motion.div
       key="landing"
-      className="flex min-h-[100dvh] flex-col items-center justify-center px-6 text-center"
+      onClick={activate}
+      className="flex min-h-[100dvh] cursor-pointer items-center justify-center px-4"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      exit={
-        reduced
-          ? { opacity: 0 }
-          : { opacity: 0, y: -40, scale: 0.96 }
-      }
-      transition={{ duration: reduced ? 0.2 : 0.7, ease: "easeInOut" }}
+      exit={reduced ? { opacity: 0 } : { opacity: 0, y: -30, scale: 0.97 }}
+      transition={{ duration: reduced ? 0.2 : 0.6, ease: "easeInOut" }}
     >
-      <motion.h1
-        className="text-5xl font-semibold tracking-tight text-white sm:text-7xl"
-        initial={{ opacity: 0, y: reduced ? 0 : 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.15, duration: 0.8, ease: "easeOut" }}
-      >
-        {siteConfig.name}
-      </motion.h1>
+      <div className="glass w-full max-w-xl overflow-hidden rounded-2xl">
+        {/* Title bar */}
+        <div className="flex items-center gap-3 border-b border-white/10 bg-white/[0.04] px-4 py-2.5">
+          <span className="font-mono text-xs text-white/45">// checkpoint</span>
+          <span className="ml-auto flex items-center gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-full bg-white/15" />
+            <span className="h-2.5 w-2.5 rounded-full bg-white/15" />
+            <span className="h-2.5 w-2.5 rounded-full bg-white/15" />
+          </span>
+        </div>
 
-      <motion.p
-        className="mt-4 max-w-md font-mono text-sm uppercase tracking-[0.25em] text-white/50"
-        initial={{ opacity: 0, y: reduced ? 0 : 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.35, duration: 0.8, ease: "easeOut" }}
-      >
-        {siteConfig.tagline}
-      </motion.p>
+        {/* Body */}
+        <div className="min-h-[16rem] px-5 py-5 font-mono text-[13px] leading-relaxed sm:px-6">
+          {lines.slice(0, count).map((line, i) => (
+            <motion.div
+              key={i}
+              initial={reduced ? false : { opacity: 0, x: -4 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.2 }}
+              className="text-white/75"
+            >
+              {line.cmd ? (
+                <span className="text-white/50">{line.text}</span>
+              ) : (
+                <>
+                  <span className="text-sky-300/80">{line.text.slice(0, 1)}</span>
+                  {line.text.slice(1)}
+                </>
+              )}
+              {line.tail && (
+                <span className="text-emerald-400"> {line.tail}</span>
+              )}
+            </motion.div>
+          ))}
 
-      <motion.button
-        type="button"
-        onClick={onEnter}
-        className="group relative mt-12 overflow-hidden rounded-full border border-white/20 bg-white/[0.04] px-10 py-3 text-sm font-medium uppercase tracking-[0.2em] text-white/90 backdrop-blur-md transition-colors hover:border-white/40 hover:bg-white/[0.08]"
-        initial={{ opacity: 0, y: reduced ? 0 : 12 }}
-        animate={
-          reduced
-            ? { opacity: 1, y: 0 }
-            : {
-                opacity: 1,
-                y: 0,
-                boxShadow: [
-                  "0 0 0px rgba(255,255,255,0.0)",
-                  "0 0 24px rgba(255,255,255,0.18)",
-                  "0 0 0px rgba(255,255,255,0.0)",
-                ],
-              }
-        }
-        transition={{
-          opacity: { delay: 0.55, duration: 0.6 },
-          y: { delay: 0.55, duration: 0.6 },
-          boxShadow: { delay: 1, duration: 3, repeat: Infinity, ease: "easeInOut" },
-        }}
-        whileHover={reduced ? undefined : { scale: 1.04 }}
-        whileTap={{ scale: 0.97 }}
-      >
-        Enter
-      </motion.button>
+          {phase === "ready" && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="mt-4 text-white/80"
+            >
+              <span className="animate-pulse">
+                [ press <span className="text-white">enter</span> — or click
+                anywhere — to access ]
+              </span>
+              <span className="ml-1 inline-block w-2 animate-pulse text-white/70">
+                ▋
+              </span>
+            </motion.div>
+          )}
+
+          {phase === "granted" && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="mt-4 font-semibold text-emerald-400"
+            >
+              &gt; access granted ✓
+            </motion.div>
+          )}
+
+          {phase === "run" && (
+            <span className="inline-block w-2 animate-pulse text-white/70">▋</span>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="border-t border-white/10 px-5 py-2.5 font-mono text-[10px] uppercase tracking-[0.18em] text-white/25 sm:px-6">
+          {siteConfig.name} · runs once per hour · {new Date().getFullYear()}
+        </div>
+      </div>
     </motion.div>
   );
 }

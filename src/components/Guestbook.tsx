@@ -1,6 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { BookOpen, Heart, Loader2, Send, Trash2 } from "lucide-react";
+import {
+  BookOpen,
+  ChevronLeft,
+  ChevronRight,
+  Heart,
+  Loader2,
+  Pin,
+  Send,
+  Trash2,
+} from "lucide-react";
 import { siteConfig } from "../config";
 import {
   addEntry,
@@ -13,7 +22,8 @@ import {
 
 const NAME_MAX = 32;
 const MSG_MAX = 280;
-const COOLDOWN_MS = 24 * 60 * 60 * 1000; // one message per day, per device
+const PAGE_SIZE = 7; // messages per page
+const COOLDOWN_MS = 24 * 60 * 60 * 1000; // currently 1s for testing (was 24 * 60 * 60 * 1000)
 const MIN_FILL_MS = 2500; // submitted faster than this == almost certainly a bot
 // Owner mode: set this in the browser console to reveal delete + like controls:
 //   localStorage.setItem('vx-gb-admin', 'YOUR_SUPABASE_SERVICE_ROLE_KEY')
@@ -56,6 +66,7 @@ export function Guestbook() {
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
+  const [page, setPage] = useState(0);
 
   // Spam traps: a honeypot field bots fill but humans never see, and the time
   // the form mounted (instant submits are bots).
@@ -113,6 +124,7 @@ export function Guestbook() {
     try {
       const entry = await addEntry(n.slice(0, NAME_MAX), m.slice(0, MSG_MAX));
       setEntries((prev) => [entry, ...prev]);
+      setPage(0); // jump to the first page to show the new message
       setMessage("");
       try {
         localStorage.setItem(NAME_KEY, n);
@@ -153,6 +165,15 @@ export function Guestbook() {
       window.alert(err instanceof Error ? err.message : "Like failed.");
     }
   };
+
+  // Pinned config entries always lead the list, then the live DB entries.
+  const pinned: GuestEntry[] = (siteConfig.guestbook.pinned ?? []).map(
+    (p, i) => ({ id: `pin-${i}`, name: p.name, message: p.message, pinned: true }),
+  );
+  const all = [...pinned, ...entries];
+  const pageCount = Math.max(1, Math.ceil(all.length / PAGE_SIZE));
+  const current = Math.min(page, pageCount - 1);
+  const paged = all.slice(current * PAGE_SIZE, current * PAGE_SIZE + PAGE_SIZE);
 
   return (
     <div className="glass rounded-3xl p-6 sm:p-8">
@@ -227,67 +248,103 @@ export function Guestbook() {
             <p className="py-4 text-center text-sm text-white/40">
               OOPSIE WOOPSIE!! Uwu We made a fucky wucky!! A wittle fucko boingo! The code monkeys at our headquarters are working VEWY HAWD to fix this!
             </p>
-          ) : entries.length === 0 ? (
+          ) : all.length === 0 ? (
             <p className="py-4 text-center text-sm text-white/40">
               No messages yet be the first to sign! ✍️
             </p>
           ) : (
-            <ul className="flex flex-col gap-3">
-              <AnimatePresence initial={false}>
-                {entries.map((entry) => (
-                  <motion.li
-                    key={entry.id}
-                    layout
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="rounded-xl border border-white/10 bg-white/[0.03] p-3"
-                  >
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-sm font-semibold text-white">
-                        {entry.name}
-                      </span>
-                      <span className="font-mono text-[10px] text-white/30">
-                        {relativeTime(entry.created_at)}
-                      </span>
-                      {isOwner && (
-                        <span className="ml-auto flex items-center gap-1">
-                          <button
-                            type="button"
-                            onClick={() => toggleLike(entry)}
-                            aria-label={entry.liked ? "Unlike" : "Like"}
-                            className="inline-flex h-6 w-6 items-center justify-center rounded text-white/30 transition-colors hover:bg-rose-500/15 hover:text-rose-300"
-                          >
-                            <Heart
-                              className="h-3.5 w-3.5"
-                              fill={entry.liked ? "currentColor" : "none"}
-                              style={entry.liked ? { color: "#fb7185" } : undefined}
-                            />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => remove(entry.id)}
-                            aria-label="Delete entry"
-                            className="inline-flex h-6 w-6 items-center justify-center rounded text-white/30 transition-colors hover:bg-red-500/15 hover:text-red-300"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
+            <>
+              <ul className="flex flex-col gap-3">
+                <AnimatePresence initial={false}>
+                  {paged.map((entry) => (
+                    <motion.li
+                      key={entry.id}
+                      layout
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="rounded-xl border border-white/10 bg-white/[0.03] p-3"
+                    >
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-sm font-semibold text-white">
+                          {entry.name}
                         </span>
-                      )}
-                    </div>
-                    <p className="mt-1 whitespace-pre-wrap break-words text-sm text-white/70">
-                      {entry.message}
-                    </p>
-                    {entry.liked && (
-                      <p className="mt-1.5 flex items-center gap-1 text-[11px] font-medium text-rose-300">
-                        <Heart className="h-3 w-3" fill="currentColor" />
-                        liked by {siteConfig.name}
+                        {entry.pinned ? (
+                          <span className="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider text-white/30">
+                            <Pin className="h-3 w-3" /> pinned
+                          </span>
+                        ) : (
+                          <span className="font-mono text-[10px] text-white/30">
+                            {relativeTime(entry.created_at)}
+                          </span>
+                        )}
+                        {isOwner && !entry.pinned && (
+                          <span className="ml-auto flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => toggleLike(entry)}
+                              aria-label={entry.liked ? "Unlike" : "Like"}
+                              className="inline-flex h-6 w-6 items-center justify-center rounded text-white/30 transition-colors hover:bg-rose-500/15 hover:text-rose-300"
+                            >
+                              <Heart
+                                className="h-3.5 w-3.5"
+                                fill={entry.liked ? "currentColor" : "none"}
+                                style={
+                                  entry.liked ? { color: "#fb7185" } : undefined
+                                }
+                              />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => remove(entry.id)}
+                              aria-label="Delete entry"
+                              className="inline-flex h-6 w-6 items-center justify-center rounded text-white/30 transition-colors hover:bg-red-500/15 hover:text-red-300"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-1 whitespace-pre-wrap break-words text-sm text-white/70">
+                        {entry.message}
                       </p>
-                    )}
-                  </motion.li>
-                ))}
-              </AnimatePresence>
-            </ul>
+                      {entry.liked && (
+                        <p className="mt-1.5 flex items-center gap-1 text-[11px] font-medium text-rose-300">
+                          <Heart className="h-3 w-3" fill="currentColor" />
+                          liked by {siteConfig.name}
+                        </p>
+                      )}
+                    </motion.li>
+                  ))}
+                </AnimatePresence>
+              </ul>
+
+              {pageCount > 1 && (
+                <div className="mt-4 flex items-center justify-center gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setPage(current - 1)}
+                    disabled={current === 0}
+                    aria-label="Previous page"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-white/60 transition-colors hover:border-white/30 hover:text-white disabled:opacity-30"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  <span className="font-mono text-[11px] text-white/40">
+                    {current + 1} / {pageCount}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setPage(current + 1)}
+                    disabled={current >= pageCount - 1}
+                    aria-label="Next page"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-white/60 transition-colors hover:border-white/30 hover:text-white disabled:opacity-30"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </>
       )}

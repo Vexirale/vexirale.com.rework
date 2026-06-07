@@ -19,6 +19,8 @@ export interface GuestEntry {
   message: string;
   liked?: boolean;
   created_at?: string;
+  /** Local-only: a pinned entry from config (not stored in the DB). */
+  pinned?: boolean;
 }
 
 export function guestbookConfigured(): boolean {
