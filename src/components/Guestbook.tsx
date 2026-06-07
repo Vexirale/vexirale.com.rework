@@ -57,7 +57,7 @@ export function Guestbook() {
   const [formError, setFormError] = useState("");
 
   // Owner mode is enabled purely via the console (no UI lock).
-  const admin = ls(ADMIN_KEY);
+  const admin = ls(ADMIN_KEY).trim();
   const isOwner = Boolean(admin);
   const mounted = useRef(true);
 
@@ -115,9 +115,9 @@ export function Guestbook() {
     setEntries((e) => e.filter((x) => x.id !== id)); // optimistic
     try {
       await deleteEntry(id, admin);
-    } catch {
+    } catch (err) {
       setEntries(prev);
-      window.alert("Delete failed — check your service_role key.");
+      window.alert(err instanceof Error ? err.message : "Delete failed.");
     }
   };
 
@@ -128,11 +128,11 @@ export function Guestbook() {
     ); // optimistic
     try {
       await setLiked(entry.id, next, admin);
-    } catch {
+    } catch (err) {
       setEntries((e) =>
         e.map((x) => (x.id === entry.id ? { ...x, liked: !next } : x)),
       );
-      window.alert("Like failed — check your service_role key / DB column.");
+      window.alert(err instanceof Error ? err.message : "Like failed.");
     }
   };
 
