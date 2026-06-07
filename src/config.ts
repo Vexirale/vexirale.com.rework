@@ -99,9 +99,13 @@ export const siteConfig = {
   timezone: "Europe/Amsterdam",
   timezoneLabel: "AMS",
 
-  // The all-time visit counter in the header, rendered with a catgirl above
-  // each digit (images via nekos.best). Set enabled to false to remove it.
-  catgirl: { enabled: true },
+  // All-time visit counter in the header — a cute image counter where little
+  // characters hold up each digit (Moe Counter, count.getloli.com). Counts
+  // automatically, no backend. Preview themes at count.getloli.com and set
+  // `theme` to the one you like (catgirl/booru styles: "moebooru", "rule34",
+  // "gelbooru", "kasuterura-1".."kasuterura-4", many "booru-*"). `name` must be
+  // unique to your site — changing it starts a fresh count.
+  moeCounter: { enabled: true, name: "vexirale-com", theme: "moebooru" },
 
   // Weekly visitor counter (uses the free Abacus API; no backend needed). Each
   // ISO week gets its own counter, so it shows "visitors this week". Put the
