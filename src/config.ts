@@ -131,11 +131,13 @@ export const siteConfig = {
     "omg so tufff i got my own domain",
     "okay idk what else to add, instead of stalking me.. talk to me!",
     "if im listening to brazilian funk... im probably at the gym, heh.",
-    "HAPPY BIRTHDAY DANIEL!!!! DID YOU SAY STAIRS!!?!?!?!?",
+    "shout out to daniel",
     "lock in.",
     "hmph!",
     "viltrumite mark HOLY PEAAKK!!!",
-    "whats a high tier human, to a low tier god.",
+    "uhhhm yes.",
+    "if u steal this code, ur just stealing vibecode tbh",
+    "uhm",
   ],
 
   projects: [
