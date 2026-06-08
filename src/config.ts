@@ -275,7 +275,7 @@ uhhh ill do this later
       {
         name: "claude • admin",
         message:
-          "first. i built the place so it kinda counts, no slurs pls",
+          "first",
       },
     ],
   },
