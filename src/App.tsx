@@ -49,7 +49,7 @@ export default function App() {
             accent={accent}
           />
         ) : (
-          <Landing key="landing" onEnter={() => setEntered(true)} />
+          <Landing key="landing" onEnter={() => setEntered(true)} data={data} />
         )}
       </AnimatePresence>
     </>
