@@ -1,16 +1,32 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { siteConfig } from "../config";
+import type { LanyardData } from "../lib/lanyard";
 
 type Line = { text: string; tail?: string; cmd?: boolean };
 
 /** Terminal "checkpoint" boot sequence shown before the portfolio. It yaps a
- *  few fake terminal steps, then waits for Enter / a click to "grant access". */
-export function Landing({ onEnter }: { onEnter: () => void }) {
+ *  few terminal steps (some reflect real live status: the Discord-presence and
+ *  Spotify lines read "ok" or "failure"), then waits for Enter / a click. */
+export function Landing({
+  onEnter,
+  data,
+}: {
+  onEnter: () => void;
+  data: LanyardData | null;
+}) {
   const reduced = useReducedMotion();
 
+  // Random-but-stable "components" count for flavor.
+  const modules = useMemo(() => 200 + Math.floor(Math.random() * 700), []);
+
+  const online = Boolean(data && data.discord_status !== "offline");
+  const playing = Boolean(data?.listening_to_spotify);
+
   const lines = useMemo<Line[]>(() => {
-    const modules = 200 + Math.floor(Math.random() * 700);
+    // "..." while still connecting, then resolves to ok / failure.
+    const discord = data == null ? "..." : online ? "ok" : "failure";
+    const spotify = data == null ? "..." : playing ? "ok" : "failure";
     return [
       { text: "$ ssh guest@vexirale.com", cmd: true },
       { text: "> establishing tunnel...", tail: "ok" },
@@ -19,8 +35,8 @@ export function Landing({ onEnter }: { onEnter: () => void }) {
       { text: "$ cd /home/vexirale", cmd: true },
       { text: "> mounting filesystem...", tail: "ok" },
       { text: "> loading profile.json...", tail: "ok" },
-      { text: "> syncing discord presence...", tail: "ok" },
-      { text: "> pinging spotify...", tail: "ok" },
+      { text: "> syncing discord presence...", tail: discord },
+      { text: "> pinging spotify...", tail: spotify },
       { text: "$ ./boot --portfolio", cmd: true },
       { text: `> hydrated ${modules} components...`, tail: "ok" },
       { text: "> warming the aurora...", tail: "ok" },
@@ -29,7 +45,7 @@ export function Landing({ onEnter }: { onEnter: () => void }) {
       { text: "> all systems ready" },
       { text: "! waiting for input", cmd: true },
     ];
-  }, []);
+  }, [data, online, playing, modules]);
 
   const [count, setCount] = useState(reduced ? lines.length : 0);
   const [phase, setPhase] = useState<"run" | "ready" | "granted">(
@@ -111,7 +127,18 @@ export function Landing({ onEnter }: { onEnter: () => void }) {
                 </>
               )}
               {line.tail && (
-                <span className="text-emerald-400"> {line.tail}</span>
+                <span
+                  className={
+                    line.tail === "failure"
+                      ? "text-red-400"
+                      : line.tail === "ok"
+                        ? "text-emerald-400"
+                        : "text-white/40"
+                  }
+                >
+                  {" "}
+                  {line.tail}
+                </span>
               )}
             </motion.div>
           ))}
