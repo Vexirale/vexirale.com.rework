@@ -104,7 +104,7 @@ export function PresencePanel({
               )}
             </div>
 
-            <div className="self-end sm:shrink-0 sm:self-auto">
+            <div className="sm:shrink-0">
               <TimeIndicator />
             </div>
           </div>
