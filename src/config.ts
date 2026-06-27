@@ -131,11 +131,13 @@ export const siteConfig = {
     "omg so tufff i got my own domain",
     "okay idk what else to add, instead of stalking me.. talk to me!",
     "if im listening to brazilian funk... im probably at the gym, heh.",
-    "HAPPY BIRTHDAY DANIEL!!!! DID YOU SAY STAIRS!!?!?!?!?",
+    "shout out to daniel",
     "lock in.",
     "hmph!",
     "viltrumite mark HOLY PEAAKK!!!",
-    "whats a high tier human, to a low tier god.",
+    "uhhhm yes.",
+    "if u steal this code, ur just stealing vibecode tbh",
+    "uhm",
   ],
 
   projects: [
@@ -150,7 +152,7 @@ export const siteConfig = {
     },
     {
       title: "Fatbike Parts",
-      description: "My webshop regarding fatbike parts, custom parts made right here in the netherlands!",
+      description: "My webshop regarding fatbike parts, uhhh quick lil e-commerce thigny",
       url: "https://fatbikeparts.eu",
       tags: ["E-commerce", "Relaunching soon?"],
       status: "finished",
@@ -163,51 +165,96 @@ export const siteConfig = {
       description: "UKC1 RE showcase — click to open the notepad.",
       tags: ["Reverse Engineering", "Notes"],
       status: "active",
-      content: `UKC1 — REVERSE ENGINEERING NOTES
+      content: `UKC1 - REVERSE ENGINEERING NOTES
 ================================
 
-Soooo yeah, Dont really know how to begin this...
+Soooo yeah, don't really know how to start this, but here it goes.
 
 > Overview
- UKC1, A famous universal ebike display. but yet... so fucking undocumented...
- Although there is a flasher tool (uploaded and leaked it to the public myself.)
- theres... zero to NO.. documenation online on how to actually customize it.
 
- I did hear that you can purchase a $600 tool from UKRiver themselves.. buttt, lets be honest
- i aint got that kinda money..
+UKC1. a super common universal ebike/fatbike/conversion kit display, so popular
+and yet so fucking undocumented.
 
- So I did it myself, Launched a Claude sesh. Launched Ghidra, and HXD ofc.
+theres a flasher tool for the UKC1 display, which is not public (buuut i leaked to the public myself),
+but actually CUSTOMIZING the thing? zero docs. nothing online. 
 
- Thankfully RISUNMOTOR did drop their .bin firmware but man is that hard to reverese engineer.
+apparently UKRiver sells an official tool for like $600. yeah, no. i aint got
+that kinda money. so i just did it myself.
+
+launched up claude, opened Ghidra and HxD, and started digging. props to
+RISUNMOTOR for at least dropping their .bin, (even though that shit was 
+dated asf and made me go insane numerous times)
 
 > Tools
+
   - Claude Opus 4.8
-  - Ghidra
-  - HxD
+  - Ghidra        (decompiler)
+  - HxD           (hex editor, overwrite mode only)
+  - Keystone      (assembler)
+  - Capstone      (disassembler)
+  - Python        (glue + a custom patcher, see below)
 
 > Findings
-uhhh ill do this later
-  
+
+what i actually pieced together about how this thing ticks:
+
+  - the app firmware loads at 0x08000000, so file offset = addr - 0x08000000.
+    (had the wrong base for way too long. sigh.)
+
+  - the live speed limit is ONE byte in RAM at 0x200000c7. everything that
+    caps your speed reads it. once you own the byte, you own the limit ig.
+
+  - catch: on boot the firmware reloads that byte from EEPROM, and it does it
+    AFTER the password screen. so anything you write early just gets stomped a
+    split second later. took me a while to even realize that's what was happening.
+
+  - buttons run through a decoder that returns a code per action. holding '-'
+    long enough returns a specific code that the main loop routes to the walk
+    assist routine. that routine has no normal callers, it's only reached by a
+    jump table. basically begging to be hijacked.
+
 > Accomplishments
-  - Succesfully enabled a Dual Entry passcode system
-    for.. heh.. Off-Road and Road use.
 
-    Lets say you start the bike, you get prompted with a passcode login screen on entry,
-    You enter: 1234 -> Bike is in 'off-road' mode and doesnt have a speed limit.
+  - Dual entry passcode system. for, heh, off-road and road use.
 
-    Okay, now lets say you want to use it for road-use
-    You enter: 1111 -> Bike is in 'road' mode, 100% legal with the speed limited to 25km/h
+    boot the bike -> passcode screen.
+    enter 1234 -> off-road mode, derestricted (no speed limit)
+    enter 1111 -> road mode, fully legal, capped at 25 km/h. (cant change)
+    wrong code or the power button -> screen just freezes. no boot bypass.
 
-    Road mode only writes 25kmh to RAM, not EEPROM. but hey if it works, it works.. right?
+    road mode never touches EEPROM. it sets a flag, then every single main
+    loop pass it re-writes 25 km/h back into that RAM byte. so even when the
+    boot reload tries to undo it, the very next loop slams it right back. it
+    just sticks. so even when you try to change the speed limit, it wont let
+    you. (unlesss you use the other code at boot.) secure very much
 
-    - Succesfully coded a killswitch.
-      Replaced the Walk assist function,
-      With some lil teeny tiny thing that overwrites the speed limit string to 25kmh.
-      When holding down the '-' key for 1.5s
-      Writes it to RAM, not EEPROM. so thats why the Dual Entry passcode system is in place.
+  - Killswitch.
+
+    took the walk assist function (normally your minus-hold) and gutted it,
+    dropped in a tiny stub that writes 25 km/h straight to the speed-limit
+    byte. hold '-' and boom, instant cap. RAM only, which is the whole reason
+    the dual passcode system exists.
+
+    also made it way snappier. stock walk assist wants ~100 polling cycles of
+    hold before it fires. cut it to 33, so the killswitch triggers about 3x
+    faster now. so you dont gotta wait like 3s for it to kick in
+
+  - A custom patcher.
+
+    once it all worked i wrote a python tool that takes the clean factory .bin
+    and stamps every mod on from a single config. passwords, speed caps, the
+    killswitch trigger time, all tweakable. it checks the firmware SHA256 so it
+    refuses to touch anything but the exact stock image, asserts the original
+    bytes at every patch site before overwriting, and spits out a byte-for-byte
+    reproducible build. good for selling ig.
 
 > Notes
-  fuck this stupid display is SO hard to reverse engineer`,
+
+cannot overstate how cursed this display is to reverse engineer. but it's
+done, it works, and now theres at least ONE corner of the internet with real
+notes on it.
+
+if ur into this and wna reverse engineer it urself.. godspeed`,
     },
     // add more here...
   ] as Project[],
@@ -217,7 +264,7 @@ uhhh ill do this later
     {
       label: "Discord",
       url: "https://discord.com/users/852601534759567410",
-      icon: "MessageCircle",
+      icon: "si:discord",
     },
     {
       label: "Email",
@@ -227,8 +274,33 @@ uhhh ill do this later
     },
     {
       label: "Roblox",
-      url: "https://www.roblox.com/users/487582825/",
+      url: "https://www.roblox.com/users/487582825/profile",
       icon: "si:roblox",
+    },
+    {
+      label: "TikTok",
+      url: "https://www.tiktok.com/@vexirale",
+      icon: "si:tiktok",
+    },
+    {
+      label: "Steam",
+      url: "https://steamcommunity.com/id/vexirale",
+      icon: "si:steam",
+    },
+    {
+      label: "Spotify",
+      url: "https://open.spotify.com/user/31taplaaukndq5ekom33j4hhc6dy",
+      icon: "si:spotify",
+    },
+    {
+      label: "Instagram",
+      url: "https://www.instagram.com/vexirailed",
+      icon: "si:instagram",
+    },
+    {
+      label: "Youtube",
+      url: "https://www.youtube.com/channel/UC7jTGf8LI-4R4u1VsFwW_1A",
+      icon: "si:youtube",
     },
     // add or remove here...
   ] as Social[],
@@ -242,7 +314,7 @@ uhhh ill do this later
   // to hide the guestbook until you set it up.
   guestbook: {
     enabled: true,
-    supabaseUrl: "https://ojudkxckmupbbysvsjwr.supabase.co/rest/v1/", // e.g. "https://abcd1234.supabase.co"
+    supabaseUrl: "https://ojudkxckmupbbysvsjwr.supabase.co", // e.g. "https://abcd1234.supabase.co"
     supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qdWRreGNrbXVwYmJ5c3ZzandyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4MjYxODksImV4cCI6MjA5NjQwMjE4OX0.SxrWG64pBoJSIcQFQj5ZfLaNWSq9QHJbZRstE4f8xi0", // public anon/publishable key
     table: "guestbook",
     // Where visitors email to request their message be removed (GDPR).
@@ -250,9 +322,9 @@ uhhh ill do this later
     // Always-on entries pinned to the top (live here, not in the DB).
     pinned: [
       {
-        name: "claude",
+        name: "claude • admin",
         message:
-          "first. i built the place so it kinda counts, no slurs pls",
+          "first",
       },
     ],
   },

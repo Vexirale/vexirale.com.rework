@@ -40,9 +40,10 @@ export function Landing({
       { text: "$ ./boot --portfolio", cmd: true },
       { text: `> hydrated ${modules} components...`, tail: "ok" },
       { text: "> warming the aurora...", tail: "ok" },
-      { text: "> waking the catgirls...", tail: "ok" },
+      { text: "> waking the catgirl...", tail: "ok" },
       { text: "> checking guestbook...", tail: "ok" },
-      { text: "> all systems nominal" },
+      { text: "> all systems ready" },
+      { text: "! waiting for input", cmd: true },
     ];
   }, [data, online, playing, modules]);
 
@@ -175,7 +176,7 @@ export function Landing({
 
         {/* Footer */}
         <div className="border-t border-white/10 px-5 py-2.5 font-mono text-[10px] uppercase tracking-[0.18em] text-white/25 sm:px-6">
-          {siteConfig.name} · runs once per hour · {new Date().getFullYear()}
+          {siteConfig.name} · console · {new Date().getFullYear()}
         </div>
       </div>
     </motion.div>
