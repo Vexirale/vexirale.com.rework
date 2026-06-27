@@ -118,7 +118,7 @@ export function Guestbook() {
     }
     const last = Number(ls(LAST_KEY) || 0);
     if (Date.now() - last < COOLDOWN_MS) {
-      setFormError("You can sign once a day — come back tomorrow! 💤");
+      setFormError("You can sign once a day, come back tomorrow! 💤");
       return;
     }
 
@@ -207,7 +207,7 @@ export function Guestbook() {
               <ul className="list-disc space-y-1 pl-4">
                 <li>
                   This is a <strong className="text-white/70">public</strong>{" "}
-                  guestbook — the name and message you submit are visible to
+                  guestbook: the name and message you submit are visible to
                   everyone.
                 </li>
                 <li>
@@ -219,7 +219,11 @@ export function Guestbook() {
                   Your browser stores your name and last-post time locally
                   (localStorage) to remember you and enforce the daily limit.
                 </li>
-                <li>No ads and no third-party tracking.</li>
+                <li>
+                  Visits are counted with privacy-friendly, cookieless
+                  analytics (Umami). No ads, no cross-site tracking, no selling
+                  your data.
+                </li>
                 <li>
                   Want your message removed? Email{" "}
                   <a
@@ -305,7 +309,7 @@ export function Guestbook() {
             </p>
           ) : all.length === 0 ? (
             <p className="py-4 text-center text-sm text-white/40">
-              No messages yet — be the first to sign! ✍️
+              No messages yet, be the first to sign! ✍️
             </p>
           ) : (
             <>
