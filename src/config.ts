@@ -317,6 +317,8 @@ if ur into this and wna reverse engineer it urself.. godspeed`,
     supabaseUrl: "https://ojudkxckmupbbysvsjwr.supabase.co", // e.g. "https://abcd1234.supabase.co"
     supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qdWRreGNrbXVwYmJ5c3ZzandyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4MjYxODksImV4cCI6MjA5NjQwMjE4OX0.SxrWG64pBoJSIcQFQj5ZfLaNWSq9QHJbZRstE4f8xi0", // public anon/publishable key
     table: "guestbook",
+    // Where visitors email to request their message be removed (GDPR).
+    contactEmail: "inquiries@vexirale.com",
     // Always-on entries pinned to the top (live here, not in the DB).
     pinned: [
       {

@@ -5,6 +5,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Heart,
+  Info,
   Loader2,
   Pin,
   Send,
@@ -67,6 +68,7 @@ export function Guestbook() {
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
   const [page, setPage] = useState(0);
+  const [showInfo, setShowInfo] = useState(false);
 
   // Spam traps: a honeypot field bots fill but humans never see, and the time
   // the form mounted (instant submits are bots).
@@ -180,7 +182,63 @@ export function Guestbook() {
       <div className="mb-5 flex items-center gap-2">
         <BookOpen className="h-5 w-5 text-white/60" />
         <h2 className="text-lg font-semibold text-white">Guestbook</h2>
+        <button
+          type="button"
+          onClick={() => setShowInfo((v) => !v)}
+          aria-label="Privacy info"
+          aria-expanded={showInfo}
+          className="ml-auto inline-flex h-7 w-7 items-center justify-center rounded-md text-white/30 transition-colors hover:bg-white/10 hover:text-white/70"
+        >
+          <Info className="h-4 w-4" />
+        </button>
       </div>
+
+      <AnimatePresence initial={false}>
+        {showInfo && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="overflow-hidden"
+          >
+            <div className="mb-5 rounded-xl border border-white/10 bg-white/[0.03] p-4 text-xs leading-relaxed text-white/55">
+              <p className="mb-1 font-semibold text-white/75">Privacy & data</p>
+              <ul className="list-disc space-y-1 pl-4">
+                <li>
+                  This is a <strong className="text-white/70">public</strong>{" "}
+                  guestbook: the name and message you submit are visible to
+                  everyone.
+                </li>
+                <li>
+                  To limit spam, a one-way <em>salted hash</em> of your IP and a
+                  timestamp are stored. The hash can't be reversed back to your
+                  IP, and your raw IP isn't saved with your message.
+                </li>
+                <li>
+                  Your browser stores your name and last-post time locally
+                  (localStorage) to remember you and enforce the daily limit.
+                </li>
+                <li>
+                  Visits are counted with privacy-friendly, cookieless
+                  analytics (Umami). No ads, no cross-site tracking, no selling
+                  your data.
+                </li>
+                <li>
+                  Want your message removed? Email{" "}
+                  <a
+                    href={`mailto:${siteConfig.guestbook.contactEmail}?subject=Guestbook%20removal%20request`}
+                    className="font-medium text-white underline decoration-white/30 underline-offset-2 hover:decoration-white"
+                  >
+                    {siteConfig.guestbook.contactEmail}
+                  </a>{" "}
+                  with the message (or your name) and it'll be deleted.
+                </li>
+              </ul>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {!configured ? (
         <p className="py-6 text-center text-sm text-white/40">
