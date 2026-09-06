@@ -9,9 +9,11 @@ import { Background } from "./components/Background";
 import { Landing } from "./components/Landing";
 import { Portfolio } from "./components/Portfolio";
 import { PerfToast } from "./components/PerfToast";
+import { TikTokFinder } from "./pages/TikTokFinder";
 
 export default function App() {
   const [entered, setEntered] = useState(false);
+  const [path] = useState(() => window.location.pathname.replace(/\/+$/, "") || "/");
 
   // Real backdrop-filter blur is opt-in (it's the main FPS cost). Panels are
   // faux-frosted by default; this re-enables true blur when configured.
@@ -33,6 +35,15 @@ export default function App() {
 
   // Reflect activity in the tab title (debounced; reverts when idle).
   useDocumentTitle(featured);
+
+  if (path === "/tiktok") {
+    return (
+      <>
+        <Background albumArt={null} />
+        <TikTokFinder />
+      </>
+    );
+  }
 
   return (
     <>

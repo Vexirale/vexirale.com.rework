@@ -174,6 +174,58 @@ your own:
 Leave `supabaseUrl` / `supabaseAnonKey` blank to keep the guestbook hidden
 ("coming soon") until you're ready.
 
+## TikTok Finder (`vexirale.com/tiktok`)
+
+A TikTok profile lookup tool in the same glass style as the rest of the site.
+Give it a username and it fetches, on separate buttons:
+
+- **Profile** — nickname, avatar, bio, verified/private flags, follower/
+  following/heart/video counts, account creation date, and username/nickname
+  change history. Free and instant — it just reads the JSON TikTok embeds in
+  the public profile page HTML, no auth needed.
+- **Region, Reposts, Stories** — TikTok gates all three behind a signed
+  request (`X-Bogus`) that only its own obfuscated client JS can produce.
+  Rather than reimplementing that signature (it's fragile and goes stale
+  every time TikTok changes it), the Worker drives a real headless Chromium
+  via [Cloudflare Browser Rendering](https://developers.cloudflare.com/browser-rendering/)
+  and lets TikTok's own page sign its own requests. This is slower (a few
+  seconds, real navigation) and genuinely best-effort: some accounts simply
+  don't expose region or an active story to a logged-out viewer no matter
+  how you ask, and the page says so honestly instead of faking data.
+
+Nothing here can run client-side — TikTok blocks browser CORS outright — so
+it needs the small Cloudflare Worker in [`/worker`](worker).
+
+### Deploying the Worker
+
+1. `cd worker && npm install`
+2. `npx wrangler login`
+3. Enable **Browser Rendering** for your account (Cloudflare dashboard →
+   Workers & Pages → Browser Rendering — free to turn on; free tier is
+   ~5 browser-hours/month, so fine for personal traffic).
+4. `npm run deploy` — wrangler prints a `*.workers.dev` URL. To use
+   `api.vexirale.com` instead, add an A/AAAA or CNAME for it in Cloudflare
+   DNS, then uncomment the `routes` block in `worker/wrangler.toml` and
+   redeploy.
+5. Put that URL into `tiktok.apiBase` in [`src/config.ts`](src/config.ts) and
+   rebuild the site. Leave it blank to keep the page in its "not deployed
+   yet" placeholder state.
+
+`worker/wrangler.toml`'s `ALLOWED_ORIGIN` locks CORS to `https://vexirale.com`
+— change it if you serve the frontend elsewhere (or temporarily to your local
+dev origin while testing).
+
+**Heads up on fragility:** TikTok's markup and network calls change without
+notice. `/profile` is the stable one. If `/region`, `/reposts`, or `/stories`
+start always coming back "unavailable," check `worker/src/handlers/browser.ts`
+against TikTok's current page first — the selectors and API-path substrings
+it watches for may need updating.
+
+**On the "stalker" framing:** this only surfaces data TikTok's own public
+profile pages already show a logged-out visitor. It doesn't access DMs,
+private accounts' content, or anything requiring the target's own login.
+Use it on accounts that are fine with that, not to actually stalk anyone.
+
 ## Deployment (GitHub Pages, custom domain vexirale.com)
 
 - Vite `base` is `/` (apex custom domain, not a project subpath).

@@ -7,6 +7,18 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="theme-color" content="#0a0a0a" />
 
+    <!-- Restores the real path after the 404.html redirect (see public/404.html),
+         before React mounts and reads window.location.pathname. -->
+    <script>
+      (function () {
+        var redirect = sessionStorage.getItem("vx-redirect");
+        if (!redirect) return;
+        sessionStorage.removeItem("vx-redirect");
+        var current = location.pathname + location.search + location.hash;
+        if (redirect !== current) history.replaceState(null, "", redirect);
+      })();
+    </script>
+
     <!-- ============================================================= -->
     <!-- EDIT ME: page title + description for SEO and link previews.   -->
     <!-- ============================================================= -->
