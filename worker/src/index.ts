@@ -1,5 +1,6 @@
 import { getProfile } from "./handlers/profile";
 import {
+  getDebug,
   getHighlights,
   getRegion,
   getReposts,
@@ -57,6 +58,8 @@ export default {
           return json(await getHighlights(env, username), 200, origin);
         case "/stories":
           return json(await getStories(env, username), 200, origin);
+        case "/debug":
+          return json(await getDebug(env, username), 200, origin);
         default:
           return json({ error: "Not found." }, 404, origin);
       }

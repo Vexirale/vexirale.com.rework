@@ -15,7 +15,7 @@
  * or its network calls may have changed. */
 
 import puppeteer, { type BrowserWorker } from "@cloudflare/puppeteer";
-import { TIKTOK_UA } from "../tiktokPage";
+import { TIKTOK_UA, TikTokLookupError } from "../tiktokPage";
 
 export interface Env {
   BROWSER: BrowserWorker;
@@ -24,23 +24,85 @@ export interface Env {
 
 const NAV_TIMEOUT_MS = 20_000;
 
+/** Ceiling on a whole browser-backed lookup, so a wedged session returns an
+ *  error instead of hanging the caller until their client gives up. */
+const OVERALL_TIMEOUT_MS = 45_000;
+
+/** How long a browser stays alive after we disconnect, ready for the next
+ *  request to reuse. The free plan allows only one NEW browser acquisition
+ *  every 20 seconds, so reusing a warm one is the difference between the
+ *  buttons working back-to-back and failing instantly. */
+const KEEP_ALIVE_MS = 600_000;
+
 /** TikTok's own signed call for a profile's post grid. Both the Videos tab
  *  and the Reposts tab load through it. */
 const POST_LIST_API = "/api/post/item_list";
+
+/** Gets a browser, strongly preferring one that is already running.
+ *
+ *  Cloudflare's free plan allows one NEW browser acquisition every 20 seconds,
+ *  so launching per request means the second lookup within that window fails
+ *  outright. A session with no `connectionId` has no Worker attached to it and
+ *  can be connected to instead, which doesn't count as an acquisition. */
+async function acquireBrowser(env: Env) {
+  const sessions = await puppeteer.sessions(env.BROWSER).catch(() => []);
+  for (const session of sessions.filter((s) => !s.connectionId)) {
+    try {
+      return await puppeteer.connect(env.BROWSER, session.sessionId);
+    } catch {
+      // Session died between listing and connecting — try the next one.
+    }
+  }
+
+  try {
+    return await puppeteer.launch(env.BROWSER, { keep_alive: KEEP_ALIVE_MS });
+  } catch {
+    const limits = await puppeteer.limits(env.BROWSER).catch(() => null);
+    const wait = limits?.timeUntilNextAllowedBrowserAcquisition;
+    throw new TikTokLookupError(
+      wait
+        ? `All browsers are busy — try again in about ${Math.ceil(wait / 1000)}s.`
+        : "Couldn't get a browser right now. Try again in a moment.",
+      503,
+    );
+  }
+}
 
 async function withPage<T>(
   env: Env,
   fn: (page: import("@cloudflare/puppeteer").Page) => Promise<T>,
 ): Promise<T> {
-  const browser = await puppeteer.launch(env.BROWSER);
+  const browser = await acquireBrowser(env);
+  let timer: ReturnType<typeof setTimeout> | undefined;
+
   try {
     const page = await browser.newPage();
     await page.setUserAgent(TIKTOK_UA);
     await page.setViewport({ width: 1280, height: 900 });
     page.setDefaultNavigationTimeout(NAV_TIMEOUT_MS);
-    return await fn(page);
+
+    // A wedged page shouldn't hang the request until the client gives up.
+    const timeout = new Promise<never>((_, reject) => {
+      timer = setTimeout(
+        () => reject(new TikTokLookupError("That lookup timed out.", 504)),
+        OVERALL_TIMEOUT_MS,
+      );
+    });
+
+    try {
+      return await Promise.race([fn(page), timeout]);
+    } finally {
+      clearTimeout(timer);
+      await page.close().catch(() => {});
+    }
   } finally {
-    await browser.close();
+    // Disconnect rather than close: the browser stays warm for the next
+    // request to reuse, which is what keeps us under the acquisition limit.
+    try {
+      await browser.disconnect();
+    } catch {
+      // Already gone — nothing to release.
+    }
   }
 }
 
@@ -351,6 +413,72 @@ export async function getHighlights(
       };
     }
     return { items, available: true, message: null };
+  });
+}
+
+export interface DebugResult {
+  title: string;
+  looksBlocked: boolean;
+  bodyStart: string;
+  apiRequests: string[];
+  videoLinksInDom: number;
+  hydratedItemListLength: number | null;
+  hydratedRegion: string | null;
+}
+
+/** Reports what TikTok actually serves the headless browser: the page title,
+ *  whether it looks like a bot wall, which API calls fired, and whether the
+ *  grid rendered. The other routes can only say "found nothing" — this says
+ *  why, which is the difference between fixing it and guessing at it. */
+export async function getDebug(env: Env, username: string): Promise<DebugResult> {
+  return withPage(env, async (page) => {
+    const apiRequests: string[] = [];
+    page.on("response", (res) => {
+      const url = res.url();
+      if (url.includes("/api/")) {
+        apiRequests.push(`${res.status()} ${url.split("?")[0]}`);
+      }
+    });
+
+    await page.goto(profileUrl(username), { waitUntil: "domcontentloaded" });
+    // Give the client-side grid fetch a chance to fire after hydration.
+    await new Promise((resolve) => setTimeout(resolve, 8_000));
+
+    const body = await page.evaluate(() => document.body?.innerText ?? "").catch(() => "");
+    const videoLinksInDom = await page
+      .evaluate(() => document.querySelectorAll('a[href*="/video/"]').length)
+      .catch(() => -1);
+    const hydrated = await page
+      .evaluate(() => {
+        const w = window as unknown as {
+          __UNIVERSAL_DATA_FOR_REHYDRATION__?: {
+            __DEFAULT_SCOPE__?: {
+              "webapp.user-detail"?: {
+                userInfo?: { itemList?: unknown[]; user?: { region?: string } };
+              };
+            };
+          };
+        };
+        const info =
+          w.__UNIVERSAL_DATA_FOR_REHYDRATION__?.__DEFAULT_SCOPE__?.[
+            "webapp.user-detail"
+          ]?.userInfo;
+        return {
+          itemListLength: info?.itemList ? info.itemList.length : null,
+          region: info?.user?.region ?? null,
+        };
+      })
+      .catch(() => ({ itemListLength: null, region: null }));
+
+    return {
+      title: await page.title().catch(() => ""),
+      looksBlocked: /verify|captcha|robot|unusual traffic/i.test(body.slice(0, 2000)),
+      bodyStart: body.slice(0, 300).replace(/\s+/g, " "),
+      apiRequests: [...new Set(apiRequests)],
+      videoLinksInDom,
+      hydratedItemListLength: hydrated.itemListLength,
+      hydratedRegion: hydrated.region,
+    };
   });
 }
 
