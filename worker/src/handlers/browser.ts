@@ -49,11 +49,12 @@ async function withPage<T>(
  *  JS signs the request. */
 function collectApiResponses(
   page: import("@cloudflare/puppeteer").Page,
-  urlIncludes: string,
+  urlIncludes: string | string[],
 ) {
+  const needles = Array.isArray(urlIncludes) ? urlIncludes : [urlIncludes];
   const bodies: unknown[] = [];
   const listener = async (res: import("@cloudflare/puppeteer").HTTPResponse) => {
-    if (!res.url().includes(urlIncludes)) return;
+    if (!needles.some((needle) => res.url().includes(needle))) return;
     try {
       bodies.push(await res.json());
     } catch {
@@ -309,50 +310,28 @@ function playlistsFromBodies(bodies: unknown[]): RawPlaylist[] {
   return found;
 }
 
-/** "Highlights" on a TikTok profile are its playlists / collections — the
- *  pinned row above the video grid. There's no such thing in the
- *  server-rendered page, and `profileTab.showPlayListTab` tells us up front
- *  whether the account even has them, so we can answer honestly when it
- *  doesn't instead of timing out on a tab that will never appear. */
+/** "Highlights" covers two different things TikTok pins above the video grid:
+ *  the newer Highlights row (the circles, story-highlight style) and the older
+ *  playlists / collections. They're separate features — an account can have
+ *  highlights with `profileTab.showPlayListTab` false — so we watch for both
+ *  kinds of response and never bail early on the playlist flag alone.
+ *
+ *  Neither appears in the server-rendered page at all, so this route is the
+ *  least certain of the set and degrades to an honest "none found". */
 export async function getHighlights(
   env: Env,
   username: string,
 ): Promise<HighlightsResult> {
   return withPage(env, async (page) => {
-    const { bodies, stop } = collectApiResponses(page, "playlist");
+    const { bodies, stop } = collectApiResponses(page, ["playlist", "highlight"]);
     await page.goto(profileUrl(username), { waitUntil: "networkidle0" });
-
-    const hasTab = await page
-      .evaluate(() => {
-        const w = window as unknown as {
-          __UNIVERSAL_DATA_FOR_REHYDRATION__?: {
-            __DEFAULT_SCOPE__?: {
-              "webapp.user-detail"?: {
-                userInfo?: { user?: { profileTab?: { showPlayListTab?: boolean } } };
-              };
-            };
-          };
-        };
-        return (
-          w.__UNIVERSAL_DATA_FOR_REHYDRATION__?.__DEFAULT_SCOPE__?.[
-            "webapp.user-detail"
-          ]?.userInfo?.user?.profileTab?.showPlayListTab ?? null
-        );
-      })
-      .catch(() => null);
-
-    if (hasTab === false) {
-      stop();
-      return {
-        items: [],
-        available: false,
-        message: "This account has no playlists / highlights on its profile.",
-      };
-    }
 
     if (bodies.length === 0) {
       await page
-        .waitForResponse((res) => res.url().includes("playlist"), { timeout: 8_000 })
+        .waitForResponse(
+          (res) => res.url().includes("playlist") || res.url().includes("highlight"),
+          { timeout: 8_000 },
+        )
         .catch(() => null);
     }
     stop();
@@ -368,7 +347,7 @@ export async function getHighlights(
       return {
         items: [],
         available: false,
-        message: "No playlists / highlights found for this account.",
+        message: "No highlights or playlists found — TikTok may not serve them to a logged-out session.",
       };
     }
     return { items, available: true, message: null };
