@@ -319,7 +319,7 @@ if ur into this and wna reverse engineer it urself.. godspeed`,
   // Deploy steps are in the README ("TikTok Finder").
   tiktok: {
     enabled: true,
-    apiBase: "", // e.g. "https://api.vexirale.com"
+    apiBase: "https://vexirale-tiktok.vexiraleh.workers.dev",
   },
 
   guestbook: {
