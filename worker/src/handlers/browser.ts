@@ -29,10 +29,15 @@ const NAV_TIMEOUT_MS = 20_000;
 const OVERALL_TIMEOUT_MS = 45_000;
 
 /** How long a browser stays alive after we disconnect, ready for the next
- *  request to reuse. The free plan allows only one NEW browser acquisition
- *  every 20 seconds, so reusing a warm one is the difference between the
- *  buttons working back-to-back and failing instantly. */
-const KEEP_ALIVE_MS = 600_000;
+ *  request to reuse. Reuse is what gets around the free plan's limit of one
+ *  NEW browser acquisition every 20 seconds.
+ *
+ *  Keep this SMALL. Idle keep-alive time is still billed browser time, and
+ *  the free plan's entire daily allowance is ten browser-minutes — so a long
+ *  keep-alive spends the whole day's budget on one warm, idle browser. A
+ *  minute is enough to click through several buttons in one sitting without
+ *  doing that. */
+const KEEP_ALIVE_MS = 60_000;
 
 /** TikTok's own signed call for a profile's post grid. Both the Videos tab
  *  and the Reposts tab load through it. */
@@ -56,16 +61,48 @@ async function acquireBrowser(env: Env) {
 
   try {
     return await puppeteer.launch(env.BROWSER, { keep_alive: KEEP_ALIVE_MS });
-  } catch {
+  } catch (launchError) {
+    // Say why, not just "no". Without this the caller can't tell a 20-second
+    // acquisition cooldown from an exhausted daily quota from a broken
+    // binding — and those need completely different responses.
     const limits = await puppeteer.limits(env.BROWSER).catch(() => null);
     const wait = limits?.timeUntilNextAllowedBrowserAcquisition;
+    const detail = limits
+      ? `${limits.activeSessions.length}/${limits.maxConcurrentSessions} sessions in use, ${limits.allowedBrowserAcquisitions} acquisition(s) allowed`
+      : String(launchError instanceof Error ? launchError.message : launchError).slice(0, 200);
+
     throw new TikTokLookupError(
       wait
-        ? `All browsers are busy — try again in about ${Math.ceil(wait / 1000)}s.`
-        : "Couldn't get a browser right now. Try again in a moment.",
+        ? `All browsers are busy — try again in about ${Math.ceil(wait / 1000)}s. (${detail})`
+        : `Couldn't get a browser: ${detail}. If this persists, the daily Browser Run allowance may be spent — see /browser-status.`,
       503,
     );
   }
+}
+
+export interface BrowserStatus {
+  limits: Awaited<ReturnType<typeof puppeteer.limits>> | null;
+  sessions: Awaited<ReturnType<typeof puppeteer.sessions>> | null;
+  error: string | null;
+}
+
+/** Reports the Browser Run pool: how many sessions are alive, which are free
+ *  to reuse, and how long until another acquisition is allowed. Deliberately
+ *  does NOT open a browser, so it still answers when every other route is
+ *  failing to get one — which is exactly when you need to know why. */
+export async function getBrowserStatus(env: Env): Promise<BrowserStatus> {
+  const [limits, sessions] = await Promise.all([
+    puppeteer.limits(env.BROWSER).catch(() => null),
+    puppeteer.sessions(env.BROWSER).catch(() => null),
+  ]);
+  return {
+    limits,
+    sessions,
+    error:
+      limits === null && sessions === null
+        ? "Browser Run did not respond — the binding may not be provisioned for this account."
+        : null,
+  };
 }
 
 async function withPage<T>(

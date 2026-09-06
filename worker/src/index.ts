@@ -1,5 +1,6 @@
 import { getProfile } from "./handlers/profile";
 import {
+  getBrowserStatus,
   getDebug,
   getHighlights,
   getRegion,
@@ -39,12 +40,18 @@ export default {
       return json({ error: "Method not allowed." }, 405, origin);
     }
 
-    const username = url.searchParams.get("u")?.trim().replace(/^@/, "") ?? "";
-    if (!USERNAME_RE.test(username)) {
-      return json({ error: "Invalid or missing username." }, 400, origin);
-    }
-
     try {
+      // Takes no username, and must stay answerable when every browser-backed
+      // route is failing to get a browser — that's when it's needed.
+      if (url.pathname === "/browser-status") {
+        return json(await getBrowserStatus(env), 200, origin);
+      }
+
+      const username = url.searchParams.get("u")?.trim().replace(/^@/, "") ?? "";
+      if (!USERNAME_RE.test(username)) {
+        return json({ error: "Invalid or missing username." }, 400, origin);
+      }
+
       switch (url.pathname) {
         case "/profile":
           return json(await getProfile(username), 200, origin);
