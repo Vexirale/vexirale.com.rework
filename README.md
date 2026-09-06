@@ -228,13 +228,36 @@ just for this — `*.workers.dev` works fine.
 — change it if you serve the frontend elsewhere (or temporarily to your local
 dev origin while testing).
 
-**Free-plan limits worth knowing** (Browser Run, Workers Free): 10 browser
-minutes per day, 3 concurrent browsers, and **one new browser instance every
-20 seconds**. Every browser-backed route here launches its own instance, so
-on the free plan clicking two of those buttons within 20s of each other will
-fail the second one. Workers Paid ($5/mo) raises this to 3 instances/second
-and unmetered browser hours. `/profile` is unaffected — it never touches a
-browser.
+### Browser budget, and why one visit serves five buttons
+
+Browser Run on Workers Free allows **10 browser minutes per day** and **one
+new browser acquisition every 20 seconds**. Both are easy to blow through,
+and did:
+
+- A route per data type meant a page visit per button — five visits, roughly
+  100 seconds, for one full lookup. That is six lookups a day.
+- Acquiring a browser per request meant two buttons clicked within 20 seconds
+  of each other failed outright.
+- Idle keep-alive is billed too, so an over-generous `keep_alive` can hold one
+  warm, idle browser for the entire daily allowance in a single request.
+
+So the browser-backed routes don't each visit the page. The first one asked
+for a given username does **one** visit collecting region, videos, reposts,
+highlights and stories together, caches the bundle for 15 minutes, and every
+other route reads from that cache. Roughly a fifth of the browser time, and
+clicking the remaining buttons is free. Acquisition also prefers reusing an
+already-running session over launching, which sidesteps the 20-second limit.
+
+The API is unchanged — each route still returns only its own slice, so the
+buttons still fetch on demand from the frontend's point of view.
+
+Even so, the free plan is tight for a page open to the public: about 24 fresh
+lookups a day. Workers Paid ($5/mo) removes the metering. `/profile` is
+unaffected by all of this — it never touches a browser.
+
+`/browser-status` reports the live pool (sessions, acquisitions allowed,
+seconds until the next one, browser time used) and opens no browser, so it
+still answers when everything else is out of budget.
 
 **Heads up on fragility:** TikTok's markup and network calls change without
 notice. `/profile` is the stable one. If `/region`, `/videos`, `/reposts`,
