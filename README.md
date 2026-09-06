@@ -183,15 +183,24 @@ Give it a username and it fetches, on separate buttons:
   following/heart/video counts, account creation date, and username/nickname
   change history. Free and instant — it just reads the JSON TikTok embeds in
   the public profile page HTML, no auth needed.
-- **Region, Reposts, Stories** — TikTok gates all three behind a signed
-  request (`X-Bogus`) that only its own obfuscated client JS can produce.
-  Rather than reimplementing that signature (it's fragile and goes stale
-  every time TikTok changes it), the Worker drives a real headless Chromium
-  via [Cloudflare Browser Rendering](https://developers.cloudflare.com/browser-rendering/)
+- **Region, Videos, Reposts, Highlights, Stories** — TikTok gates all of
+  these behind a signed request (`X-Bogus`) that only its own obfuscated
+  client JS can produce. Rather than reimplementing that signature (it's
+  fragile and goes stale every time TikTok changes it), the Worker drives a
+  real headless Chromium via
+  [Cloudflare Browser Rendering](https://developers.cloudflare.com/browser-rendering/)
   and lets TikTok's own page sign its own requests. This is slower (a few
   seconds, real navigation) and genuinely best-effort: some accounts simply
   don't expose region or an active story to a logged-out viewer no matter
   how you ask, and the page says so honestly instead of faking data.
+
+  **Videos** and **Reposts** both come off the same signed call
+  (`/api/post/item_list`) — the profile grid on load is the account's own
+  videos, and the Reposts tab reloads the same endpoint with other people's.
+  **Highlights** means the playlists / collections pinned above the grid;
+  `profileTab.showPlayListTab` in the page state says up front whether an
+  account has any, so the page can answer honestly rather than hang on a tab
+  that will never render.
 
 Nothing here can run client-side — TikTok blocks browser CORS outright — so
 it needs the small Cloudflare Worker in [`/worker`](worker).
@@ -216,10 +225,10 @@ it needs the small Cloudflare Worker in [`/worker`](worker).
 dev origin while testing).
 
 **Heads up on fragility:** TikTok's markup and network calls change without
-notice. `/profile` is the stable one. If `/region`, `/reposts`, or `/stories`
-start always coming back "unavailable," check `worker/src/handlers/browser.ts`
-against TikTok's current page first — the selectors and API-path substrings
-it watches for may need updating.
+notice. `/profile` is the stable one. If `/region`, `/videos`, `/reposts`,
+`/highlights`, or `/stories` start always coming back "unavailable," check
+`worker/src/handlers/browser.ts` against TikTok's current page first — the
+selectors and API-path substrings it watches for may need updating.
 
 **On the "stalker" framing:** this only surfaces data TikTok's own public
 profile pages already show a logged-out visitor. It doesn't access DMs,

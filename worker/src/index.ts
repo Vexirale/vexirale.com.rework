@@ -1,5 +1,12 @@
 import { getProfile } from "./handlers/profile";
-import { getRegion, getReposts, getStories, type Env } from "./handlers/browser";
+import {
+  getHighlights,
+  getRegion,
+  getReposts,
+  getStories,
+  getVideos,
+  type Env,
+} from "./handlers/browser";
 import { TikTokLookupError } from "./tiktokPage";
 
 function corsHeaders(origin: string): HeadersInit {
@@ -42,8 +49,12 @@ export default {
           return json(await getProfile(username), 200, origin);
         case "/region":
           return json(await getRegion(env, username), 200, origin);
+        case "/videos":
+          return json(await getVideos(env, username), 200, origin);
         case "/reposts":
           return json(await getReposts(env, username), 200, origin);
+        case "/highlights":
+          return json(await getHighlights(env, username), 200, origin);
         case "/stories":
           return json(await getStories(env, username), 200, origin);
         default:
