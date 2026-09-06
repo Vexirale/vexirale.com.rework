@@ -312,6 +312,16 @@ if ur into this and wna reverse engineer it urself.. godspeed`,
   //   localStorage.setItem('vx-gb-admin', '<service_role key>'); location.reload()
   // (the key stays in your browser, never in the repo). Leave url/anonKey blank
   // to hide the guestbook until you set it up.
+  // TikTok lookup tool at vexirale.com/tiktok. Needs a small Cloudflare
+  // Worker backend (see /worker — TikTok blocks browser CORS entirely, so
+  // this can't be done client-side). Leave apiBase blank to show a
+  // "not deployed yet" placeholder on the page instead of failed requests.
+  // Deploy steps are in the README ("TikTok Finder").
+  tiktok: {
+    enabled: true,
+    apiBase: "", // e.g. "https://api.vexirale.com"
+  },
+
   guestbook: {
     enabled: true,
     supabaseUrl: "https://ojudkxckmupbbysvsjwr.supabase.co", // e.g. "https://abcd1234.supabase.co"

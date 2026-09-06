@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>vexirale</title>
+    <script>
+      // GitHub Pages has no server-side rewrites, so a direct visit to a
+      // client route (e.g. /tiktok) 404s here. Stash the real path and
+      // bounce to the real index.html, which restores it before React
+      // mounts (see the inline script in index.html).
+      sessionStorage.setItem(
+        "vx-redirect",
+        location.pathname + location.search + location.hash,
+      );
+      location.replace("/");
+    </script>
+  </head>
+  <body></body>
+</html>

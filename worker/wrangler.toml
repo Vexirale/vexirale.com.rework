@@ -1,0 +1,22 @@
+name = "vexirale-tiktok"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+# Powers the /region, /reposts, /stories routes — a real headless Chromium
+# so TikTok's own JS generates its request signatures for us (see README).
+# Free tier: ~5 browser-hours/month. Requires the Workers Browser Rendering
+# product to be enabled on your account (free to enable).
+[browser]
+binding = "BROWSER"
+
+# Allowed origin for CORS. Change if you serve the frontend from elsewhere.
+[vars]
+ALLOWED_ORIGIN = "https://vexirale.com"
+
+# Uncomment and set a custom route once DNS for api.vexirale.com points at
+# Cloudflare (see README). Without this, use the workers.dev URL wrangler
+# prints after `wrangler deploy`.
+# routes = [
+#   { pattern = "api.vexirale.com/*", zone_name = "vexirale.com" }
+# ]
