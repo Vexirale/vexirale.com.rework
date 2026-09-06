@@ -188,19 +188,20 @@ Give it a username and it fetches, on separate buttons:
   client JS can produce. Rather than reimplementing that signature (it's
   fragile and goes stale every time TikTok changes it), the Worker drives a
   real headless Chromium via
-  [Cloudflare Browser Rendering](https://developers.cloudflare.com/browser-rendering/)
-  and lets TikTok's own page sign its own requests. This is slower (a few
-  seconds, real navigation) and genuinely best-effort: some accounts simply
-  don't expose region or an active story to a logged-out viewer no matter
-  how you ask, and the page says so honestly instead of faking data.
+  [Cloudflare Browser Run](https://developers.cloudflare.com/browser-run/)
+  (formerly Browser Rendering) and lets TikTok's own page sign its own
+  requests. This is slower (a few seconds, real navigation) and genuinely
+  best-effort: some accounts simply don't expose region or an active story
+  to a logged-out viewer no matter how you ask, and the page says so
+  honestly instead of faking data.
 
   **Videos** and **Reposts** both come off the same signed call
   (`/api/post/item_list`) — the profile grid on load is the account's own
   videos, and the Reposts tab reloads the same endpoint with other people's.
-  **Highlights** means the playlists / collections pinned above the grid;
-  `profileTab.showPlayListTab` in the page state says up front whether an
-  account has any, so the page can answer honestly rather than hang on a tab
-  that will never render.
+  **Highlights** covers both things TikTok pins above the grid: the newer
+  Highlights row (the circles) and the older playlists / collections. They're
+  separate features, so the handler watches for both and doesn't trust the
+  `profileTab.showPlayListTab` flag alone.
 
 Nothing here can run client-side — TikTok blocks browser CORS outright — so
 it needs the small Cloudflare Worker in [`/worker`](worker).
@@ -208,21 +209,32 @@ it needs the small Cloudflare Worker in [`/worker`](worker).
 ### Deploying the Worker
 
 1. `cd worker && npm install`
-2. `npx wrangler login`
-3. Enable **Browser Rendering** for your account (Cloudflare dashboard →
-   Workers & Pages → Browser Rendering — free to turn on; free tier is
-   ~5 browser-hours/month, so fine for personal traffic).
-4. `npm run deploy` — wrangler prints a `*.workers.dev` URL. To use
-   `api.vexirale.com` instead, add an A/AAAA or CNAME for it in Cloudflare
-   DNS, then uncomment the `routes` block in `worker/wrangler.toml` and
-   redeploy.
-5. Put that URL into `tiktok.apiBase` in [`src/config.ts`](src/config.ts) and
-   rebuild the site. Leave it blank to keep the page in its "not deployed
-   yet" placeholder state.
+2. `npx wrangler login` — opens a browser, click **Allow**.
+3. `npm run deploy` — wrangler prints a `*.workers.dev` URL. The `[browser]`
+   binding in `wrangler.toml` provisions Browser Run on deploy; there is **no
+   dashboard step** to enable it first.
+4. Sanity-check it in a browser:
+   `https://<your-worker>.workers.dev/profile?u=khaby.lame` should return JSON.
+5. Put the Worker URL into `tiktok.apiBase` in
+   [`src/config.ts`](src/config.ts) and push. Leave it blank to keep the page
+   in its "not deployed yet" placeholder state.
+
+To serve it from `api.vexirale.com` instead of `*.workers.dev`, the
+`vexirale.com` zone has to be on Cloudflare DNS; then uncomment the `routes`
+block in `worker/wrangler.toml` and redeploy. Not worth the DNS migration
+just for this — `*.workers.dev` works fine.
 
 `worker/wrangler.toml`'s `ALLOWED_ORIGIN` locks CORS to `https://vexirale.com`
 — change it if you serve the frontend elsewhere (or temporarily to your local
 dev origin while testing).
+
+**Free-plan limits worth knowing** (Browser Run, Workers Free): 10 browser
+minutes per day, 3 concurrent browsers, and **one new browser instance every
+20 seconds**. Every browser-backed route here launches its own instance, so
+on the free plan clicking two of those buttons within 20s of each other will
+fail the second one. Workers Paid ($5/mo) raises this to 3 instances/second
+and unmetered browser hours. `/profile` is unaffected — it never touches a
+browser.
 
 **Heads up on fragility:** TikTok's markup and network calls change without
 notice. `/profile` is the stable one. If `/region`, `/videos`, `/reposts`,
