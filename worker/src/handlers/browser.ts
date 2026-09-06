@@ -177,46 +177,229 @@ export interface RegionResult {
   message: string | null;
 }
 
-export async function getRegion(env: Env, username: string): Promise<RegionResult> {
-  return withPage(env, async (page) => {
-    const { bodies, stop } = collectApiResponses(page, "/api/user/detail");
-    await page.goto(profileUrl(username), { waitUntil: "networkidle0" });
-    stop();
+/** Everything one page visit can yield. */
+interface LookupBundle {
+  region: RegionResult;
+  videos: MediaResult;
+  reposts: MediaResult;
+  highlights: HighlightsResult;
+  stories: StoriesResult;
+}
 
-    // Try the network-captured responses first (these come from TikTok's own
-    // signed client-side fetch, which sometimes carries `region` even when
-    // the server-rendered HTML doesn't).
-    for (const body of bodies) {
-      const region = (body as { userInfo?: { user?: { region?: string } } })
-        ?.userInfo?.user?.region;
-      if (region) return { region, available: true, message: null };
-    }
+/** Long enough that clicking through every button costs one visit, short
+ *  enough that a lookup still reflects a reasonably current profile. */
+const CACHE_TTL_SECONDS = 900;
 
-    // Fall back to whatever hydrated into the page's own state.
-    const region = await page
-      .evaluate(() => {
-        const w = window as unknown as {
-          __UNIVERSAL_DATA_FOR_REHYDRATION__?: {
-            __DEFAULT_SCOPE__?: {
-              "webapp.user-detail"?: { userInfo?: { user?: { region?: string } } };
-            };
+function bundleCacheKey(username: string): Request {
+  return new Request(
+    `https://tiktok-lookup.invalid/${encodeURIComponent(username.toLowerCase())}`,
+  );
+}
+
+/** `caches.default` is a Workers extension. The DOM lib — which this file
+ *  needs for the page.evaluate() callbacks — shadows CacheStorage with the
+ *  browser type, and that one has no `default`, so reach it through a narrow
+ *  cast rather than dropping DOM types the rest of the file depends on. */
+function workerCache(): Cache {
+  return (caches as unknown as { default: Cache }).default;
+}
+
+async function readBundle(username: string): Promise<LookupBundle | null> {
+  try {
+    const hit = await workerCache().match(bundleCacheKey(username));
+    return hit ? ((await hit.json()) as LookupBundle) : null;
+  } catch {
+    return null;
+  }
+}
+
+async function writeBundle(username: string, bundle: LookupBundle): Promise<void> {
+  try {
+    await workerCache().put(
+      bundleCacheKey(username),
+      new Response(JSON.stringify(bundle), {
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": `max-age=${CACHE_TTL_SECONDS}`,
+        },
+      }),
+    );
+  } catch {
+    // The cache is an optimisation — failing to store must not fail a lookup.
+  }
+}
+
+function readRegionFrom(
+  page: import("@cloudflare/puppeteer").Page,
+  bodies: unknown[],
+): Promise<string | null> {
+  // TikTok's own signed client-side fetch sometimes carries `region` even
+  // when the server-rendered HTML doesn't.
+  for (const body of bodies) {
+    const region = (body as { userInfo?: { user?: { region?: string } } })
+      ?.userInfo?.user?.region;
+    if (region) return Promise.resolve(region);
+  }
+
+  return page
+    .evaluate(() => {
+      const w = window as unknown as {
+        __UNIVERSAL_DATA_FOR_REHYDRATION__?: {
+          __DEFAULT_SCOPE__?: {
+            "webapp.user-detail"?: { userInfo?: { user?: { region?: string } } };
           };
         };
-        return (
-          w.__UNIVERSAL_DATA_FOR_REHYDRATION__?.__DEFAULT_SCOPE__?.[
-            "webapp.user-detail"
-          ]?.userInfo?.user?.region ?? null
-        );
-      })
-      .catch(() => null);
+      };
+      return (
+        w.__UNIVERSAL_DATA_FOR_REHYDRATION__?.__DEFAULT_SCOPE__?.[
+          "webapp.user-detail"
+        ]?.userInfo?.user?.region ?? null
+      );
+    })
+    .catch(() => null);
+}
 
-    if (region) return { region, available: true, message: null };
+/** The Reposts tab only exists in the DOM for accounts with public reposts.
+ *  TikTok's own client-side router loads them on click. */
+function clickRepostsTab(
+  page: import("@cloudflare/puppeteer").Page,
+): Promise<boolean> {
+  return page
+    .evaluate(() => {
+      const tabs = Array.from(document.querySelectorAll('[role="tab"], a, div'));
+      const repostTab = tabs.find(
+        (el) => (el.textContent ?? "").trim().toLowerCase() === "reposts",
+      ) as HTMLElement | undefined;
+      repostTab?.click();
+      return Boolean(repostTab);
+    })
+    .catch(() => false);
+}
+
+/** One page visit that gathers every browser-only data type at once.
+ *
+ *  Doing a visit per data type is what made this unusable: five buttons meant
+ *  five page loads, and the free plan's whole daily allowance is ten browser
+ *  minutes. One visit costs roughly a fifth of that, and the result is cached
+ *  so clicking the remaining buttons costs nothing. */
+async function collectAll(env: Env, username: string): Promise<LookupBundle> {
+  return withPage(env, async (page) => {
+    const posts = collectApiResponses(page, POST_LIST_API);
+    const detail = collectApiResponses(page, "/api/user/detail");
+    const playlists = collectApiResponses(page, ["playlist", "highlight"]);
+    const storyFeed = collectApiResponses(page, "story");
+
+    await page.goto(profileUrl(username), { waitUntil: "domcontentloaded" });
+
+    // Wait for TikTok's own signed grid call rather than for an idle network,
+    // which on TikTok may never actually settle.
+    if (posts.bodies.length === 0) {
+      await page
+        .waitForResponse((res) => res.url().includes(POST_LIST_API), {
+          timeout: 12_000,
+        })
+        .catch(() => null);
+    }
+
+    const region = await readRegionFrom(page, detail.bodies);
+
+    const sawRepostsTab = await clickRepostsTab(page);
+    if (sawRepostsTab) {
+      await page
+        .waitForResponse((res) => res.url().includes(POST_LIST_API), {
+          timeout: 10_000,
+        })
+        .catch(() => null);
+    }
+
+    posts.stop();
+    detail.stop();
+    playlists.stop();
+    storyFeed.stop();
+
+    // Both tabs come off the same endpoint, so ownership decides which is
+    // which: the account's own posts are videos, anyone else's are reposts.
+    const allPosts = itemsFromBodies(posts.bodies);
+    const owned = (item: RawPost) =>
+      (item.author?.uniqueId ?? "").toLowerCase() === username.toLowerCase();
+    const videos = toMediaItems(allPosts.filter(owned));
+    const reposts = toMediaItems(
+      allPosts.filter((item) => item.author?.uniqueId && !owned(item)),
+    );
+
+    const highlights: HighlightItem[] = playlistsFromBodies(playlists.bodies).map(
+      (p) => ({
+        id: (p.mixId ?? p.id) as string,
+        name: (p.mixName ?? p.name) as string,
+        cover: p.coverUrl ?? p.cover ?? "",
+        count: p.itemCount ?? p.videoCount ?? null,
+      }),
+    );
+
+    const stories = itemsFromBodies(storyFeed.bodies).map((s) => ({
+      id: s.id,
+      cover: s.video?.cover ?? "",
+    }));
+
     return {
-      region: null,
-      available: false,
-      message: "TikTok doesn't expose region for this account without an authenticated session.",
+      region: region
+        ? { region, available: true, message: null }
+        : {
+            region: null,
+            available: false,
+            message:
+              "TikTok doesn't expose region for this account without an authenticated session.",
+          },
+      videos: {
+        items: videos,
+        available: videos.length > 0,
+        message:
+          videos.length > 0
+            ? null
+            : "No public videos found — the account may be private, empty, or TikTok didn't serve the grid.",
+      },
+      reposts: {
+        items: reposts,
+        available: sawRepostsTab,
+        message: !sawRepostsTab
+          ? "This account has no visible Reposts tab."
+          : reposts.length === 0
+            ? "No reposts found."
+            : null,
+      },
+      highlights: {
+        items: highlights,
+        available: highlights.length > 0,
+        message:
+          highlights.length > 0
+            ? null
+            : "No highlights or playlists found — TikTok may not serve them to a logged-out session.",
+      },
+      stories: {
+        items: stories,
+        available: stories.length > 0,
+        message:
+          stories.length > 0
+            ? null
+            : "No active stories, or unavailable without a logged-in session.",
+      },
     };
   });
+}
+
+/** Cached bundle for a username, collecting it first if needed. Whichever
+ *  button is clicked first pays for the visit; the rest are free. */
+async function getBundle(env: Env, username: string): Promise<LookupBundle> {
+  const cached = await readBundle(username);
+  if (cached) return cached;
+
+  const bundle = await collectAll(env, username);
+  await writeBundle(username, bundle);
+  return bundle;
+}
+
+export async function getRegion(env: Env, username: string): Promise<RegionResult> {
+  return (await getBundle(env, username)).region;
 }
 
 interface RawPost {
@@ -277,88 +460,11 @@ function toMediaItems(raw: RawPost[]): MediaItem[] {
 /** Videos the account posted itself — the default profile grid, which TikTok
  *  loads client-side via its own signed call the moment the page hydrates. */
 export async function getVideos(env: Env, username: string): Promise<MediaResult> {
-  return withPage(env, async (page) => {
-    const { bodies, stop } = collectApiResponses(page, POST_LIST_API);
-    await page.goto(profileUrl(username), { waitUntil: "networkidle0" });
-
-    // The grid is lazy — give the first signed call a moment if it hasn't
-    // landed by the time navigation settles.
-    if (bodies.length === 0) {
-      await page
-        .waitForResponse((res) => res.url().includes(POST_LIST_API), {
-          timeout: 10_000,
-        })
-        .catch(() => null);
-    }
-    stop();
-
-    const items = toMediaItems(
-      itemsFromBodies(bodies).filter(
-        (item) => (item.author?.uniqueId ?? "").toLowerCase() === username.toLowerCase(),
-      ),
-    );
-
-    if (items.length === 0) {
-      return {
-        items: [],
-        available: false,
-        message: "No public videos found — the account may be private, empty, or TikTok didn't serve the grid.",
-      };
-    }
-    return { items, available: true, message: null };
-  });
+  return (await getBundle(env, username)).videos;
 }
 
 export async function getReposts(env: Env, username: string): Promise<MediaResult> {
-  return withPage(env, async (page) => {
-    const { bodies, stop } = collectApiResponses(page, POST_LIST_API);
-    await page.goto(profileUrl(username), { waitUntil: "networkidle0" });
-
-    // The "Reposts" tab only exists in the DOM for accounts with public
-    // reposts. TikTok's own client-side router loads them on click.
-    const clicked = await page
-      .evaluate(() => {
-        const tabs = Array.from(document.querySelectorAll('[role="tab"], a, div'));
-        const repostTab = tabs.find((el) =>
-          (el.textContent ?? "").trim().toLowerCase() === "reposts",
-        ) as HTMLElement | undefined;
-        repostTab?.click();
-        return Boolean(repostTab);
-      })
-      .catch(() => false);
-
-    if (!clicked) {
-      stop();
-      return {
-        items: [],
-        available: false,
-        message: "This account has no visible Reposts tab.",
-      };
-    }
-
-    await page
-      .waitForResponse((res) => res.url().includes(POST_LIST_API), {
-        timeout: 10_000,
-      })
-      .catch(() => null);
-    stop();
-
-    // Anything in the grid authored by someone else is a repost; the account's
-    // own videos come from the same endpoint on first load.
-    const items = toMediaItems(
-      itemsFromBodies(bodies).filter(
-        (item) =>
-          item.author?.uniqueId &&
-          item.author.uniqueId.toLowerCase() !== username.toLowerCase(),
-      ),
-    );
-
-    return {
-      items,
-      available: true,
-      message: items.length === 0 ? "No reposts found." : null,
-    };
-  });
+  return (await getBundle(env, username)).reposts;
 }
 
 export interface HighlightItem {
@@ -421,36 +527,7 @@ export async function getHighlights(
   env: Env,
   username: string,
 ): Promise<HighlightsResult> {
-  return withPage(env, async (page) => {
-    const { bodies, stop } = collectApiResponses(page, ["playlist", "highlight"]);
-    await page.goto(profileUrl(username), { waitUntil: "networkidle0" });
-
-    if (bodies.length === 0) {
-      await page
-        .waitForResponse(
-          (res) => res.url().includes("playlist") || res.url().includes("highlight"),
-          { timeout: 8_000 },
-        )
-        .catch(() => null);
-    }
-    stop();
-
-    const items: HighlightItem[] = playlistsFromBodies(bodies).map((p) => ({
-      id: (p.mixId ?? p.id) as string,
-      name: (p.mixName ?? p.name) as string,
-      cover: p.coverUrl ?? p.cover ?? "",
-      count: p.itemCount ?? p.videoCount ?? null,
-    }));
-
-    if (items.length === 0) {
-      return {
-        items: [],
-        available: false,
-        message: "No highlights or playlists found — TikTok may not serve them to a logged-out session.",
-      };
-    }
-    return { items, available: true, message: null };
-  });
+  return (await getBundle(env, username)).highlights;
 }
 
 export interface DebugResult {
@@ -531,25 +608,5 @@ export interface StoriesResult {
 }
 
 export async function getStories(env: Env, username: string): Promise<StoriesResult> {
-  return withPage(env, async (page) => {
-    const { bodies, stop } = collectApiResponses(page, "story");
-    await page.goto(profileUrl(username), { waitUntil: "networkidle0" });
-    stop();
-
-    const raw = itemsFromBodies(bodies);
-
-    if (raw.length === 0) {
-      return {
-        items: [],
-        available: false,
-        message: "No active stories, or unavailable without a logged-in session.",
-      };
-    }
-
-    return {
-      items: raw.map((s) => ({ id: s.id, cover: s.video?.cover ?? "" })),
-      available: true,
-      message: null,
-    };
-  });
+  return (await getBundle(env, username)).stories;
 }
