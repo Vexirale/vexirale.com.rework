@@ -1,7 +1,7 @@
-# Must match the Worker name in the Cloudflare dashboard or Workers Builds
-# fails. This matches the project auto-created by the Git integration, which
-# took its name from the repo. Renaming it here means renaming it there too.
-name = "vexirale-com-rework"
+# Must match the Worker name in the Cloudflare dashboard, or Workers Builds
+# fails and `wrangler deploy` targets the wrong Worker. Renaming it here means
+# renaming it there too. Live at vexirale-tiktok.vexiraleh.workers.dev.
+name = "vexirale-tiktok"
 main = "src/index.ts"
 compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
