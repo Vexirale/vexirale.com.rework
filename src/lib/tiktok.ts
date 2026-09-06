@@ -32,15 +32,34 @@ export interface TikTokRegion {
   message: string | null;
 }
 
-export interface TikTokRepostItem {
+/** One post. Shared by the Videos and Reposts sections — a repost is the same
+ *  shape, just authored by someone other than the account looked up. */
+export interface TikTokMediaItem {
   id: string;
   desc: string;
   cover: string;
   url: string;
+  author: string;
+  playCount: number | null;
+  createTime: number | null;
 }
 
-export interface TikTokReposts {
-  items: TikTokRepostItem[];
+export interface TikTokMedia {
+  items: TikTokMediaItem[];
+  available: boolean;
+  message: string | null;
+}
+
+/** A playlist / collection pinned to the profile. */
+export interface TikTokHighlightItem {
+  id: string;
+  name: string;
+  cover: string;
+  count: number | null;
+}
+
+export interface TikTokHighlights {
+  items: TikTokHighlightItem[];
   available: boolean;
   message: string | null;
 }
@@ -100,8 +119,14 @@ export const fetchProfile = (base: string, username: string, signal?: AbortSigna
 export const fetchRegion = (base: string, username: string, signal?: AbortSignal) =>
   request<TikTokRegion>(base, "/region", username, signal);
 
+export const fetchVideos = (base: string, username: string, signal?: AbortSignal) =>
+  request<TikTokMedia>(base, "/videos", username, signal);
+
 export const fetchReposts = (base: string, username: string, signal?: AbortSignal) =>
-  request<TikTokReposts>(base, "/reposts", username, signal);
+  request<TikTokMedia>(base, "/reposts", username, signal);
+
+export const fetchHighlights = (base: string, username: string, signal?: AbortSignal) =>
+  request<TikTokHighlights>(base, "/highlights", username, signal);
 
 export const fetchStories = (base: string, username: string, signal?: AbortSignal) =>
   request<TikTokStories>(base, "/stories", username, signal);

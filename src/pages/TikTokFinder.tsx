@@ -4,28 +4,35 @@ import {
   ArrowLeft,
   BadgeCheck,
   Globe2,
+  Layers,
   Lock,
+  Play,
   Repeat2,
   Search,
   Sparkles,
   Loader2,
   RefreshCw,
   AlertTriangle,
+  Video,
 } from "lucide-react";
 import { siteConfig } from "../config";
 import { hexToRgb } from "../lib/color";
 import { GlassPanel } from "../components/GlassPanel";
 import { Skeleton } from "../components/Skeleton";
 import {
+  fetchHighlights,
   fetchProfile,
   fetchRegion,
   fetchReposts,
   fetchStories,
+  fetchVideos,
   normalizeUsername,
   TikTokApiError,
+  type TikTokHighlights,
+  type TikTokMedia,
+  type TikTokMediaItem,
   type TikTokProfile,
   type TikTokRegion,
-  type TikTokReposts,
   type TikTokStories,
 } from "../lib/tiktok";
 
@@ -138,6 +145,45 @@ function DataSection<T>({
   );
 }
 
+/** Thumbnail grid shared by Videos and Reposts. A repost is the same shape,
+ *  so the original author is shown whenever it isn't the account looked up. */
+function MediaGrid({ items, owner }: { items: TikTokMediaItem[]; owner: string }) {
+  return (
+    <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+      {items.map((item) => (
+        <a
+          key={item.id}
+          href={item.url}
+          target="_blank"
+          rel="noreferrer noopener"
+          title={item.desc}
+          className="group relative aspect-[9/16] overflow-hidden rounded-lg border border-white/10"
+        >
+          <img
+            src={item.cover}
+            alt={item.desc}
+            referrerPolicy="no-referrer"
+            className="h-full w-full object-cover transition-transform group-hover:scale-105"
+          />
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-1.5 pb-1 pt-4">
+            {item.playCount !== null && (
+              <span className="flex items-center gap-1 text-[11px] font-medium text-white/90">
+                <Play size={10} className="fill-current" />
+                {formatNumber(item.playCount)}
+              </span>
+            )}
+            {item.author && item.author.toLowerCase() !== owner.toLowerCase() && (
+              <span className="block truncate text-[10px] text-white/60">
+                @{item.author}
+              </span>
+            )}
+          </div>
+        </a>
+      ))}
+    </div>
+  );
+}
+
 const STAT_ITEMS: { key: keyof TikTokProfile["stats"]; label: string }[] = [
   { key: "followers", label: "Followers" },
   { key: "following", label: "Following" },
@@ -154,7 +200,10 @@ export function TikTokFinder() {
 
   const [profile, setProfile] = useState<SectionState<TikTokProfile>>(initialSection);
   const [region, setRegion] = useState<SectionState<TikTokRegion>>(initialSection);
-  const [reposts, setReposts] = useState<SectionState<TikTokReposts>>(initialSection);
+  const [videos, setVideos] = useState<SectionState<TikTokMedia>>(initialSection);
+  const [reposts, setReposts] = useState<SectionState<TikTokMedia>>(initialSection);
+  const [highlights, setHighlights] =
+    useState<SectionState<TikTokHighlights>>(initialSection);
   const [stories, setStories] = useState<SectionState<TikTokStories>>(initialSection);
 
   const apiBase = siteConfig.tiktok.apiBase;
@@ -162,6 +211,25 @@ export function TikTokFinder() {
 
   const toggle = (key: string) =>
     setExpanded((prev) => ({ ...prev, [key]: !prev[key] }));
+
+  /** Drives one section through loading → done/error. Every button uses this,
+   *  so a new data type only needs its fetcher and a <DataSection>. */
+  async function run<T>(
+    setState: (state: SectionState<T>) => void,
+    fetcher: (base: string, name: string) => Promise<T>,
+    name: string,
+  ) {
+    setState({ status: "loading", data: null, error: null });
+    try {
+      setState({ status: "done", data: await fetcher(apiBase, name), error: null });
+    } catch (err) {
+      setState({
+        status: "error",
+        data: null,
+        error: err instanceof TikTokApiError ? err.message : "Something went wrong.",
+      });
+    }
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -174,67 +242,13 @@ export function TikTokFinder() {
     setUsername(normalized);
     setProfile(initialSection());
     setRegion(initialSection());
+    setVideos(initialSection());
     setReposts(initialSection());
+    setHighlights(initialSection());
     setStories(initialSection());
     setExpanded({ profile: true });
-    void runProfile(normalized);
+    void run(setProfile, fetchProfile, normalized);
   };
-
-  async function runProfile(name: string) {
-    setProfile({ status: "loading", data: null, error: null });
-    try {
-      const data = await fetchProfile(apiBase, name);
-      setProfile({ status: "done", data, error: null });
-    } catch (err) {
-      setProfile({
-        status: "error",
-        data: null,
-        error: err instanceof TikTokApiError ? err.message : "Something went wrong.",
-      });
-    }
-  }
-
-  async function runRegion(name: string) {
-    setRegion({ status: "loading", data: null, error: null });
-    try {
-      const data = await fetchRegion(apiBase, name);
-      setRegion({ status: "done", data, error: null });
-    } catch (err) {
-      setRegion({
-        status: "error",
-        data: null,
-        error: err instanceof TikTokApiError ? err.message : "Something went wrong.",
-      });
-    }
-  }
-
-  async function runReposts(name: string) {
-    setReposts({ status: "loading", data: null, error: null });
-    try {
-      const data = await fetchReposts(apiBase, name);
-      setReposts({ status: "done", data, error: null });
-    } catch (err) {
-      setReposts({
-        status: "error",
-        data: null,
-        error: err instanceof TikTokApiError ? err.message : "Something went wrong.",
-      });
-    }
-  }
-
-  async function runStories(name: string) {
-    setStories({ status: "loading", data: null, error: null });
-    try {
-      const data = await fetchStories(apiBase, name);
-      setStories({ status: "done", data, error: null });
-    } catch (err) {
-      setStories({
-        status: "error",
-        data: null,
-        error: err instanceof TikTokApiError ? err.message : "Something went wrong.",
-      });
-    }
-  }
 
   return (
     <motion.div
@@ -257,10 +271,11 @@ export function TikTokFinder() {
           TikTok Finder
         </h1>
         <p className="mt-2 text-sm leading-relaxed text-white/50">
-          Looks up a TikTok account's public profile data. Region, reposts, and
-          stories run through a real headless browser on the backend since TikTok
-          blocks that data otherwise — those can take a few seconds, and may come
-          back unavailable if TikTok doesn't expose it for a given account.
+          Looks up a TikTok account's public profile data. Everything except the
+          profile itself runs through a real headless browser on the backend,
+          since TikTok blocks that data otherwise — those can take a few seconds,
+          and may come back unavailable if TikTok doesn't expose it for a given
+          account.
         </p>
       </div>
 
@@ -303,7 +318,7 @@ export function TikTokFinder() {
                 label="Profile"
                 icon={<BadgeCheck size={16} className="text-white/50" />}
                 state={profile}
-                onFetch={() => runProfile(username)}
+                onFetch={() => run(setProfile, fetchProfile, username)}
                 expanded={Boolean(expanded.profile)}
                 onToggle={() => toggle("profile")}
               >
@@ -372,7 +387,7 @@ export function TikTokFinder() {
                 label="Region"
                 icon={<Globe2 size={16} className="text-white/50" />}
                 state={region}
-                onFetch={() => runRegion(username)}
+                onFetch={() => run(setRegion, fetchRegion, username)}
                 expanded={Boolean(expanded.region)}
                 onToggle={() => toggle("region")}
               >
@@ -390,33 +405,35 @@ export function TikTokFinder() {
               </DataSection>
 
               <DataSection
+                label="Videos"
+                icon={<Video size={16} className="text-white/50" />}
+                state={videos}
+                onFetch={() => run(setVideos, fetchVideos, username)}
+                expanded={Boolean(expanded.videos)}
+                onToggle={() => toggle("videos")}
+              >
+                {(data) =>
+                  data.available && data.items.length > 0 ? (
+                    <MediaGrid items={data.items} owner={username} />
+                  ) : (
+                    <p className="text-sm text-white/50">
+                      {data.message ?? "No public videos found for this account."}
+                    </p>
+                  )
+                }
+              </DataSection>
+
+              <DataSection
                 label="Reposts"
                 icon={<Repeat2 size={16} className="text-white/50" />}
                 state={reposts}
-                onFetch={() => runReposts(username)}
+                onFetch={() => run(setReposts, fetchReposts, username)}
                 expanded={Boolean(expanded.reposts)}
                 onToggle={() => toggle("reposts")}
               >
                 {(data) =>
                   data.available && data.items.length > 0 ? (
-                    <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-                      {data.items.map((item) => (
-                        <a
-                          key={item.id}
-                          href={item.url}
-                          target="_blank"
-                          rel="noreferrer noopener"
-                          className="group relative aspect-[9/16] overflow-hidden rounded-lg border border-white/10"
-                        >
-                          <img
-                            src={item.cover}
-                            alt={item.desc}
-                            referrerPolicy="no-referrer"
-                            className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                          />
-                        </a>
-                      ))}
-                    </div>
+                    <MediaGrid items={data.items} owner={username} />
                   ) : (
                     <p className="text-sm text-white/50">
                       {data.message ?? "No reposts found for this account."}
@@ -426,10 +443,55 @@ export function TikTokFinder() {
               </DataSection>
 
               <DataSection
+                label="Highlights"
+                icon={<Layers size={16} className="text-white/50" />}
+                state={highlights}
+                onFetch={() => run(setHighlights, fetchHighlights, username)}
+                expanded={Boolean(expanded.highlights)}
+                onToggle={() => toggle("highlights")}
+              >
+                {(data) =>
+                  data.available && data.items.length > 0 ? (
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                      {data.items.map((item) => (
+                        <div
+                          key={item.id}
+                          className="overflow-hidden rounded-lg border border-white/10"
+                        >
+                          {item.cover && (
+                            <img
+                              src={item.cover}
+                              alt=""
+                              referrerPolicy="no-referrer"
+                              className="aspect-video w-full object-cover"
+                            />
+                          )}
+                          <div className="px-2 py-1.5">
+                            <div className="truncate text-xs font-medium text-white/90">
+                              {item.name}
+                            </div>
+                            {item.count !== null && (
+                              <div className="text-[11px] text-white/40">
+                                {item.count} videos
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-white/50">
+                      {data.message ?? "No playlists / highlights found."}
+                    </p>
+                  )
+                }
+              </DataSection>
+
+              <DataSection
                 label="Stories"
                 icon={<Sparkles size={16} className="text-white/50" />}
                 state={stories}
-                onFetch={() => runStories(username)}
+                onFetch={() => run(setStories, fetchStories, username)}
                 expanded={Boolean(expanded.stories)}
                 onToggle={() => toggle("stories")}
               >
