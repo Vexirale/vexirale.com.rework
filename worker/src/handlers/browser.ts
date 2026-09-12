@@ -43,6 +43,10 @@ const KEEP_ALIVE_MS = 60_000;
  *  and the Reposts tab load through it. */
 const POST_LIST_API = "/api/post/item_list";
 
+/** Reposts are a separate endpoint, not the post grid filtered by author —
+ *  confirmed from a live /debug run, where both fired on page load. */
+const REPOST_LIST_API = "/api/repost/item_list";
+
 /** Gets a browser, strongly preferring one that is already running.
  *
  *  Cloudflare's free plan allows one NEW browser acquisition every 20 seconds,
@@ -152,18 +156,34 @@ function collectApiResponses(
 ) {
   const needles = Array.isArray(urlIncludes) ? urlIncludes : [urlIncludes];
   const bodies: unknown[] = [];
-  const listener = async (res: import("@cloudflare/puppeteer").HTTPResponse) => {
+
+  // Reading a body is async, and Puppeteer does not await event listeners —
+  // so every read has to be tracked and awaited explicitly via settled().
+  // Without that, `bodies` is read while the parses are still pending and
+  // comes back empty even though the responses arrived with HTTP 200. That
+  // was the actual cause of every route reporting "found nothing".
+  const reads: Promise<void>[] = [];
+
+  const listener = (res: import("@cloudflare/puppeteer").HTTPResponse) => {
     if (!needles.some((needle) => res.url().includes(needle))) return;
-    try {
-      bodies.push(await res.json());
-    } catch {
-      // Not JSON (or body already consumed) — ignore.
-    }
+    reads.push(
+      res
+        .json()
+        .then((body: unknown) => {
+          bodies.push(body);
+        })
+        .catch(() => {
+          // Not JSON, or the body went away with the page — skip it.
+        }),
+    );
   };
+
   page.on("response", listener);
   return {
     bodies,
     stop: () => page.off("response", listener),
+    /** Await before reading `bodies`. */
+    settled: () => Promise.all(reads).then(() => undefined),
   };
 }
 
@@ -259,23 +279,6 @@ function readRegionFrom(
     .catch(() => null);
 }
 
-/** The Reposts tab only exists in the DOM for accounts with public reposts.
- *  TikTok's own client-side router loads them on click. */
-function clickRepostsTab(
-  page: import("@cloudflare/puppeteer").Page,
-): Promise<boolean> {
-  return page
-    .evaluate(() => {
-      const tabs = Array.from(document.querySelectorAll('[role="tab"], a, div'));
-      const repostTab = tabs.find(
-        (el) => (el.textContent ?? "").trim().toLowerCase() === "reposts",
-      ) as HTMLElement | undefined;
-      repostTab?.click();
-      return Boolean(repostTab);
-    })
-    .catch(() => false);
-}
-
 /** One page visit that gathers every browser-only data type at once.
  *
  *  Doing a visit per data type is what made this unusable: five buttons meant
@@ -284,10 +287,18 @@ function clickRepostsTab(
  *  so clicking the remaining buttons costs nothing. */
 async function collectAll(env: Env, username: string): Promise<LookupBundle> {
   return withPage(env, async (page) => {
+    // Endpoint list confirmed from a live /debug run: loading a profile fires
+    // all of these itself, each returning 200. Reposts have their OWN
+    // endpoint and arrive on load, so no tab clicking is needed.
     const posts = collectApiResponses(page, POST_LIST_API);
+    const repostFeed = collectApiResponses(page, REPOST_LIST_API);
     const detail = collectApiResponses(page, "/api/user/detail");
-    const playlists = collectApiResponses(page, ["playlist", "highlight"]);
-    const storyFeed = collectApiResponses(page, "story");
+    const playlists = collectApiResponses(page, [
+      "/api/user/playlist",
+      "/api/user/collection_list",
+      "highlight",
+    ]);
+    const storyFeed = collectApiResponses(page, "/api/story/item_list");
 
     await page.goto(profileUrl(username), { waitUntil: "domcontentloaded" });
 
@@ -301,31 +312,34 @@ async function collectAll(env: Env, username: string): Promise<LookupBundle> {
         .catch(() => null);
     }
 
+    // The rest of the calls fire around the same time; give the slower ones a
+    // moment rather than racing them.
+    await new Promise((resolve) => setTimeout(resolve, 2_500));
+
     const region = await readRegionFrom(page, detail.bodies);
 
-    const sawRepostsTab = await clickRepostsTab(page);
-    if (sawRepostsTab) {
-      await page
-        .waitForResponse((res) => res.url().includes(POST_LIST_API), {
-          timeout: 10_000,
-        })
-        .catch(() => null);
-    }
-
     posts.stop();
+    repostFeed.stop();
     detail.stop();
     playlists.stop();
     storyFeed.stop();
 
-    // Both tabs come off the same endpoint, so ownership decides which is
-    // which: the account's own posts are videos, anyone else's are reposts.
-    const allPosts = itemsFromBodies(posts.bodies);
+    // Bodies are parsed asynchronously, so wait for every read to land before
+    // touching the arrays — skipping this is what made all of these empty.
+    await Promise.all([
+      posts.settled(),
+      repostFeed.settled(),
+      detail.settled(),
+      playlists.settled(),
+      storyFeed.settled(),
+    ]);
+
+    // The grid endpoint can also echo reposts back, so ownership still decides
+    // what counts as the account's own video.
     const owned = (item: RawPost) =>
       (item.author?.uniqueId ?? "").toLowerCase() === username.toLowerCase();
-    const videos = toMediaItems(allPosts.filter(owned));
-    const reposts = toMediaItems(
-      allPosts.filter((item) => item.author?.uniqueId && !owned(item)),
-    );
+    const videos = toMediaItems(itemsFromBodies(posts.bodies).filter(owned));
+    const reposts = toMediaItems(itemsFromBodies(repostFeed.bodies));
 
     const highlights: HighlightItem[] = playlistsFromBodies(playlists.bodies).map(
       (p) => ({
@@ -360,12 +374,8 @@ async function collectAll(env: Env, username: string): Promise<LookupBundle> {
       },
       reposts: {
         items: reposts,
-        available: sawRepostsTab,
-        message: !sawRepostsTab
-          ? "This account has no visible Reposts tab."
-          : reposts.length === 0
-            ? "No reposts found."
-            : null,
+        available: reposts.length > 0,
+        message: reposts.length === 0 ? "No public reposts found." : null,
       },
       highlights: {
         items: highlights,
@@ -535,6 +545,19 @@ export interface DebugResult {
   looksBlocked: boolean;
   bodyStart: string;
   apiRequests: string[];
+  /** Bodies actually parsed per endpoint. If these are 0 while apiRequests
+   *  shows the endpoint returning 200, the responses are arriving but the
+   *  parsing is dropping them — which is a different bug from being blocked. */
+  parsed: {
+    postBodies: number;
+    postItems: number;
+    repostBodies: number;
+    repostItems: number;
+    playlistBodies: number;
+    playlistsFound: number;
+    storyBodies: number;
+    storyItems: number;
+  };
   videoLinksInDom: number;
   hydratedItemListLength: number | null;
   hydratedRegion: string | null;
@@ -554,9 +577,31 @@ export async function getDebug(env: Env, username: string): Promise<DebugResult>
       }
     });
 
+    // Same collectors the real lookup uses, so this verifies the parsing path
+    // rather than just observing the network.
+    const posts = collectApiResponses(page, POST_LIST_API);
+    const repostFeed = collectApiResponses(page, REPOST_LIST_API);
+    const playlists = collectApiResponses(page, [
+      "/api/user/playlist",
+      "/api/user/collection_list",
+      "highlight",
+    ]);
+    const storyFeed = collectApiResponses(page, "/api/story/item_list");
+
     await page.goto(profileUrl(username), { waitUntil: "domcontentloaded" });
     // Give the client-side grid fetch a chance to fire after hydration.
     await new Promise((resolve) => setTimeout(resolve, 8_000));
+
+    posts.stop();
+    repostFeed.stop();
+    playlists.stop();
+    storyFeed.stop();
+    await Promise.all([
+      posts.settled(),
+      repostFeed.settled(),
+      playlists.settled(),
+      storyFeed.settled(),
+    ]);
 
     const body = await page.evaluate(() => document.body?.innerText ?? "").catch(() => "");
     const videoLinksInDom = await page
@@ -589,6 +634,16 @@ export async function getDebug(env: Env, username: string): Promise<DebugResult>
       looksBlocked: /verify|captcha|robot|unusual traffic/i.test(body.slice(0, 2000)),
       bodyStart: body.slice(0, 300).replace(/\s+/g, " "),
       apiRequests: [...new Set(apiRequests)],
+      parsed: {
+        postBodies: posts.bodies.length,
+        postItems: itemsFromBodies(posts.bodies).length,
+        repostBodies: repostFeed.bodies.length,
+        repostItems: itemsFromBodies(repostFeed.bodies).length,
+        playlistBodies: playlists.bodies.length,
+        playlistsFound: playlistsFromBodies(playlists.bodies).length,
+        storyBodies: storyFeed.bodies.length,
+        storyItems: itemsFromBodies(storyFeed.bodies).length,
+      },
       videoLinksInDom,
       hydratedItemListLength: hydrated.itemListLength,
       hydratedRegion: hydrated.region,
