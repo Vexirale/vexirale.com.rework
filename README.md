@@ -195,9 +195,15 @@ Give it a username and it fetches, on separate buttons:
   to a logged-out viewer no matter how you ask, and the page says so
   honestly instead of faking data.
 
-  **Videos** and **Reposts** both come off the same signed call
-  (`/api/post/item_list`) — the profile grid on load is the account's own
-  videos, and the Reposts tab reloads the same endpoint with other people's.
+  Endpoints confirmed from a live `/debug` run — loading a profile fires all
+  of these itself, each returning 200, so nothing needs clicking:
+  `/api/post/item_list` (videos), `/api/repost/item_list` (reposts — its own
+  endpoint, not the grid filtered by author), `/api/user/playlist` and
+  `/api/user/collection_list` (highlights), `/api/story/item_list` (stories).
+
+  **Region is not obtainable this way.** No `/api/user/detail` call fires on a
+  profile view at all, and the hydration state carries no `region`, so the
+  route reports unavailable rather than pretending. That isn't a bug to fix.
   **Highlights** covers both things TikTok pins above the grid: the newer
   Highlights row (the circles) and the older playlists / collections. They're
   separate features, so the handler watches for both and doesn't trust the
