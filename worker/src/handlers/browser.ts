@@ -540,24 +540,24 @@ export async function getHighlights(
   return (await getBundle(env, username)).highlights;
 }
 
+/** One data-bearing response, as actually received. `bytes` and `keys` are
+ *  what separate "TikTok served nothing" from "the shape changed" from "the
+ *  body could not be read" — three problems with three different fixes that
+ *  all look identical from the outside. */
+export interface ResponseSample {
+  url: string;
+  status: number;
+  bytes: number;
+  keys: string[];
+  itemCount: number | null;
+}
+
 export interface DebugResult {
   title: string;
   looksBlocked: boolean;
   bodyStart: string;
   apiRequests: string[];
-  /** Bodies actually parsed per endpoint. If these are 0 while apiRequests
-   *  shows the endpoint returning 200, the responses are arriving but the
-   *  parsing is dropping them — which is a different bug from being blocked. */
-  parsed: {
-    postBodies: number;
-    postItems: number;
-    repostBodies: number;
-    repostItems: number;
-    playlistBodies: number;
-    playlistsFound: number;
-    storyBodies: number;
-    storyItems: number;
-  };
+  samples: ResponseSample[];
   videoLinksInDom: number;
   hydratedItemListLength: number | null;
   hydratedRegion: string | null;
@@ -570,38 +570,62 @@ export interface DebugResult {
 export async function getDebug(env: Env, username: string): Promise<DebugResult> {
   return withPage(env, async (page) => {
     const apiRequests: string[] = [];
+    const samples: ResponseSample[] = [];
+    const reads: Promise<void>[] = [];
+
+    // A response body can only be read once, so this route uses ONE reader
+    // and derives both the item counts and the raw samples from it. Reading
+    // the same response twice would starve whichever reader lost the race.
+    const interesting =
+      /item_list|\/api\/user\/playlist|collection_list|\/api\/user\/detail/;
+
     page.on("response", (res) => {
       const url = res.url();
       if (url.includes("/api/")) {
         apiRequests.push(`${res.status()} ${url.split("?")[0]}`);
       }
-    });
+      if (!interesting.test(url)) return;
 
-    // Same collectors the real lookup uses, so this verifies the parsing path
-    // rather than just observing the network.
-    const posts = collectApiResponses(page, POST_LIST_API);
-    const repostFeed = collectApiResponses(page, REPOST_LIST_API);
-    const playlists = collectApiResponses(page, [
-      "/api/user/playlist",
-      "/api/user/collection_list",
-      "highlight",
-    ]);
-    const storyFeed = collectApiResponses(page, "/api/story/item_list");
+      reads.push(
+        res
+          .text()
+          .then((text) => {
+            let keys: string[] = [];
+            let itemCount: number | null = null;
+            try {
+              const parsed: unknown = JSON.parse(text);
+              if (parsed && typeof parsed === "object") {
+                keys = Object.keys(parsed as Record<string, unknown>).slice(0, 12);
+                const list = (parsed as { itemList?: unknown[] }).itemList;
+                itemCount = Array.isArray(list) ? list.length : null;
+              }
+            } catch {
+              keys = text.length === 0 ? ["<empty body>"] : ["<not json>"];
+            }
+            samples.push({
+              url: url.split("?")[0],
+              status: res.status(),
+              bytes: text.length,
+              keys,
+              itemCount,
+            });
+          })
+          .catch((err: unknown) => {
+            samples.push({
+              url: url.split("?")[0],
+              status: res.status(),
+              bytes: -1,
+              keys: [`<read failed: ${err instanceof Error ? err.message : "unknown"}>`],
+              itemCount: null,
+            });
+          }),
+      );
+    });
 
     await page.goto(profileUrl(username), { waitUntil: "domcontentloaded" });
     // Give the client-side grid fetch a chance to fire after hydration.
     await new Promise((resolve) => setTimeout(resolve, 8_000));
-
-    posts.stop();
-    repostFeed.stop();
-    playlists.stop();
-    storyFeed.stop();
-    await Promise.all([
-      posts.settled(),
-      repostFeed.settled(),
-      playlists.settled(),
-      storyFeed.settled(),
-    ]);
+    await Promise.all(reads);
 
     const body = await page.evaluate(() => document.body?.innerText ?? "").catch(() => "");
     const videoLinksInDom = await page
@@ -634,16 +658,7 @@ export async function getDebug(env: Env, username: string): Promise<DebugResult>
       looksBlocked: /verify|captcha|robot|unusual traffic/i.test(body.slice(0, 2000)),
       bodyStart: body.slice(0, 300).replace(/\s+/g, " "),
       apiRequests: [...new Set(apiRequests)],
-      parsed: {
-        postBodies: posts.bodies.length,
-        postItems: itemsFromBodies(posts.bodies).length,
-        repostBodies: repostFeed.bodies.length,
-        repostItems: itemsFromBodies(repostFeed.bodies).length,
-        playlistBodies: playlists.bodies.length,
-        playlistsFound: playlistsFromBodies(playlists.bodies).length,
-        storyBodies: storyFeed.bodies.length,
-        storyItems: itemsFromBodies(storyFeed.bodies).length,
-      },
+      samples,
       videoLinksInDom,
       hydratedItemListLength: hydrated.itemListLength,
       hydratedRegion: hydrated.region,
