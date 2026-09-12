@@ -201,6 +201,25 @@ Give it a username and it fetches, on separate buttons:
   endpoint, not the grid filtered by author), `/api/user/playlist` and
   `/api/user/collection_list` (highlights), `/api/story/item_list` (stories).
 
+  **What actually works, measured against the live Worker:**
+
+  | Button | State |
+  |---|---|
+  | Profile | works — real data, instant, no browser |
+  | Reposts | works — verified 24 items with authors and play counts |
+  | Highlights | works — verified real playlists with covers and counts |
+  | Stories | correct — valid response, empty unless the account has a live story |
+  | Videos | **unavailable** — see below |
+  | Region | **unavailable** — see below |
+
+  **Videos are withheld, not broken.** TikTok answers
+  `/api/post/item_list` with HTTP 200 and a **zero-byte body** from this
+  server, on every account tested, which is why its own grid doesn't render
+  either (`videoLinksInDom: 0`). Reposts come back with hundreds of KB over
+  the same browser session and signing, so this isn't a block on the page or
+  a signing problem — it is specific to the video-list endpoint. No parsing
+  change reaches it. The video *count* on the profile is still accurate.
+
   **Region is not obtainable this way.** No `/api/user/detail` call fires on a
   profile view at all, and the hydration state carries no `region`, so the
   route reports unavailable rather than pretending. That isn't a bug to fix.
