@@ -37,11 +37,25 @@ export interface RawTikTokStats {
   heartCount: number;
   videoCount: number;
   friendCount: number;
+  /** Rounded sibling of heartCount that doesn't overflow int32. */
+  heart?: number;
+}
+
+/** The same counts as strings. TikTok provides these because the numeric
+ *  `stats` overflow signed 32-bit ints on large accounts, and because the
+ *  numeric ones are rounded. */
+export interface RawTikTokStatsV2 {
+  followerCount?: string;
+  followingCount?: string;
+  heartCount?: string;
+  videoCount?: string;
+  friendCount?: string;
 }
 
 export interface RawUserDetail {
   user: RawTikTokUser;
   stats: RawTikTokStats;
+  statsV2?: RawTikTokStatsV2;
   itemList?: unknown[];
   statusCode?: number;
 }

@@ -159,11 +159,14 @@ function MediaGrid({ items, owner }: { items: TikTokMediaItem[]; owner: string }
           title={item.desc}
           className="group relative aspect-[9/16] overflow-hidden rounded-lg border border-white/10"
         >
+          {/* Empty alt on purpose: TikTok's cover URLs carry an `x-expires`
+              stamp and do break, and a long description rendered as alt text
+              bursts out of the tile. The caption lives on the link's title. */}
           <img
             src={item.cover}
-            alt={item.desc}
+            alt=""
             referrerPolicy="no-referrer"
-            className="h-full w-full object-cover transition-transform group-hover:scale-105"
+            className="h-full w-full bg-white/[0.04] object-cover transition-transform group-hover:scale-105"
           />
           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-1.5 pb-1 pt-4">
             {item.playCount !== null && (
