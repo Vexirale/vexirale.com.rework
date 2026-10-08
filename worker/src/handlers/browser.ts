@@ -367,10 +367,14 @@ async function collectAll(env: Env, username: string): Promise<LookupBundle> {
       videos: {
         items: videos,
         available: videos.length > 0,
+        // Measured, not guessed: TikTok answers the video-list endpoint with
+        // HTTP 200 and a zero-byte body for every account tested from here,
+        // so its own grid doesn't render either. Blaming the account would be
+        // misleading — the profile's video count is still accurate.
         message:
           videos.length > 0
             ? null
-            : "No public videos found — the account may be private, empty, or TikTok didn't serve the grid.",
+            : "TikTok returns an empty video list to this server, so the grid can't be read. The video count on the profile above is still accurate.",
       },
       reposts: {
         items: reposts,
